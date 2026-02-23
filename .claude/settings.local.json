@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh auth:*)",
+      "WebFetch(domain:store.steampowered.com)",
+      "WebFetch(domain:higherplaingames.com)",
+      "WebFetch(domain:www.incrementaldb.com)",
+      "Bash(npm init:*)",
+      "Bash(npm install:*)",
+      "Bash(npx vite --version)",
+      "Bash(timeout 15 npx vite:*)",
+      "Bash(timeout 20 npx vite:*)",
+      "Bash(npx electron:*)",
+      "Bash(node -e:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(timeout 25 npx vite:*)",
+      "Bash(ELECTRON_RUN_AS_NODE= npx vite:*)",
+      "WebFetch(domain:desktopdefender.miraheze.org)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}
