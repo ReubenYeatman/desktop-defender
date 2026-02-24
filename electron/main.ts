@@ -1,6 +1,10 @@
 import { app, BrowserWindow, ipcMain, screen } from 'electron';
 import path from 'path';
 import fs from 'fs/promises';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 app.disableHardwareAcceleration();
 
@@ -21,7 +25,7 @@ function createWindow() {
     // x: x + workAreaWidth - windowWidth - 20, // 20px padding from right edge
     // y: y + 20, // 20px padding from top edge
     frame: false,
-    resizable: false,
+    resizable: true,
     alwaysOnTop: true,
     titleBarStyle: 'hidden',
     trafficLightPosition: { x: 10, y: 10 },
@@ -44,6 +48,7 @@ function createWindow() {
   mainWindow.once('ready-to-show', () => {
     mainWindow?.show();
     mainWindow?.focus();
+    app.focus({ steal: true });
     console.log("Window is ready to show and focused");
   });
 
