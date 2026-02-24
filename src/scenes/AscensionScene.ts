@@ -136,6 +136,17 @@ export class AscensionScene extends Phaser.Scene {
     startBtn.on('pointerdown', () => {
       this.scene.start('GameScene', { profile: this.profile });
     });
+
+    // Handle resize
+    this.scale.on('resize', this.onResize, this);
+  }
+
+  private onResize() {
+    this.scene.restart({ profile: this.profile });
+  }
+
+  shutdown() {
+    this.scale.off('resize', this.onResize, this);
   }
 
   private refreshRows() {

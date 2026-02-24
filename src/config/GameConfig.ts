@@ -7,6 +7,7 @@ import { UpgradeScene } from '../scenes/UpgradeScene';
 import { GameOverScene } from '../scenes/GameOverScene';
 import { AscensionScene } from '../scenes/AscensionScene';
 import { PauseScene } from '../scenes/PauseScene';
+import { SettingsScene } from '../scenes/SettingsScene';
 import { GAME_WIDTH, GAME_HEIGHT, COLOR_BACKGROUND } from './Constants';
 
 export const GAME_CONFIG: Phaser.Types.Core.GameConfig = {
@@ -29,5 +30,5 @@ export const GAME_CONFIG: Phaser.Types.Core.GameConfig = {
       fps: 120, // Increased physics frequency for CCD simulation
     },
   },
-  scene: [BootScene, MainMenuScene, GameScene, HUDScene, UpgradeScene, GameOverScene, AscensionScene, PauseScene],
+  scene: [BootScene, MainMenuScene, GameScene, HUDScene, UpgradeScene, GameOverScene, AscensionScene, PauseScene, SettingsScene],
 };

@@ -36,11 +36,22 @@ export interface RunState {
 }
 
 export interface GameSettings {
+  // Audio
   musicVolume: number;
   sfxVolume: number;
+  muteAll: boolean;
+
+  // Visual
   screenShake: boolean;
   bloom: boolean;
+  particleQuality: 'low' | 'medium' | 'high';
+  vignette: boolean;
+  showDamageNumbers: boolean;
+
+  // Window (Electron)
   alwaysOnTop: boolean;
+  windowOpacity: number;
+  windowSize: 400 | 500 | 600 | 700 | 800;
 }
 
 export function createDefaultProfile(): PlayerProfile {
@@ -53,11 +64,20 @@ export function createDefaultProfile(): PlayerProfile {
     ascensionUpgradeLevels: {},
     unlockedWeapons: ['basic'],
     settings: {
+      // Audio
       musicVolume: 0.5,
       sfxVolume: 0.7,
+      muteAll: false,
+      // Visual
       screenShake: true,
       bloom: true,
+      particleQuality: 'high',
+      vignette: true,
+      showDamageNumbers: true,
+      // Window
       alwaysOnTop: false,
+      windowOpacity: 1.0,
+      windowSize: 600,
     },
   };
 }

@@ -35,7 +35,11 @@
       "Bash(node --version:*)",
       "Bash(npm run dev:*)",
       "Bash(npm run check:hardcoding:*)",
-      "Bash(npm run lint:*)"
+      "Bash(npm run lint:*)",
+      "Bash(grep:*)",
+      "Bash(pkill:*)",
+      "Bash(git fetch:*)",
+      "Bash(git stash push:*)"
     ]
   }
 }

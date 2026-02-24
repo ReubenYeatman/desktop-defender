@@ -94,6 +94,12 @@ export class MainMenuScene extends Phaser.Scene {
       });
     }
 
+    // Settings button
+    btnY += 48;
+    this.createButton(w / 2, btnY, 170, 34, 'SETTINGS', UI_THEME.panelBgLight, UI_THEME.panelBgHover, '#aaccff', () => {
+      this.scene.start('SettingsScene', { profile: this.gameState.profile, returnScene: 'MainMenuScene' });
+    });
+
     // Stats footer
     if (this.gameState.profile.highestWaveEver > 0) {
       this.add.text(w / 2, h - 30, `Best: Wave ${this.gameState.profile.highestWaveEver}  |  Ascensions: ${this.gameState.profile.ascensionCount}`, {
@@ -109,6 +115,18 @@ export class MainMenuScene extends Phaser.Scene {
       fontFamily: 'monospace',
       color: '#333344',
     }).setOrigin(1, 1);
+
+    // Handle resize
+    this.scale.on('resize', this.onResize, this);
+  }
+
+  private onResize() {
+    // Restart scene to reposition all elements
+    this.scene.restart();
+  }
+
+  shutdown() {
+    this.scale.off('resize', this.onResize, this);
   }
 
   private createButton(

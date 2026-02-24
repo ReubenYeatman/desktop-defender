@@ -139,6 +139,17 @@ export class GameOverScene extends Phaser.Scene {
       this.applyRunRewards(ascendium);
       this.scene.start('GameScene', { profile: this.profile });
     });
+
+    // Handle resize
+    this.scale.on('resize', this.onResize, this);
+  }
+
+  private onResize() {
+    this.scene.restart({ runStats: this.runStats, profile: this.profile });
+  }
+
+  shutdown() {
+    this.scale.off('resize', this.onResize, this);
   }
 
   private applyRunRewards(ascendium: number) {

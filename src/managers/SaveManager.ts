@@ -40,6 +40,20 @@ export class SaveManager {
     if (!state.version) {
       state.version = 1;
     }
+
+    // Ensure new settings fields exist with defaults
+    const settings = state.profile.settings;
+    if (settings.muteAll === undefined) settings.muteAll = false;
+    if (settings.particleQuality === undefined) settings.particleQuality = 'high';
+    if (settings.vignette === undefined) settings.vignette = true;
+    if (settings.showDamageNumbers === undefined) settings.showDamageNumbers = true;
+    if (settings.windowOpacity === undefined) settings.windowOpacity = 1.0;
+    // Migrate old string-based windowSize to numeric
+    if (settings.windowSize === undefined || typeof settings.windowSize === 'string') {
+      const sizeMap: Record<string, number> = { small: 400, medium: 600, large: 800 };
+      settings.windowSize = sizeMap[settings.windowSize as string] || 600;
+    }
+
     return state;
   }
 

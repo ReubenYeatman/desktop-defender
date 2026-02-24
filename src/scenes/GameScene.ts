@@ -61,7 +61,7 @@ export class GameScene extends Phaser.Scene {
     // Initialize entity pools
     this.enemyPool = new EnemyPool(this);
     this.projectilePool = new ProjectilePool(this);
-    this.damageNumberPool = new DamageNumberPool(this);
+    this.damageNumberPool = new DamageNumberPool(this, this.profile.settings);
 
     // Initialize turret
     this.turret = new Turret(this, centerX, centerY);
@@ -145,13 +145,15 @@ export class GameScene extends Phaser.Scene {
         const intensity = ratio < 0.25 ? 0.008 : 0.004;
         this.shakeCamera(intensity, 80);
 
-        // Flash red vignette
-        this.redVignette.setAlpha(UI_THEME.vignetteAlpha);
-        this.tweens.add({
-          targets: this.redVignette,
-          alpha: 0,
-          duration: TIMING.vignetteFade,
-        });
+        // Flash red vignette (if enabled)
+        if (this.profile.settings.vignette) {
+          this.redVignette.setAlpha(UI_THEME.vignetteAlpha);
+          this.tweens.add({
+            targets: this.redVignette,
+            alpha: 0,
+            duration: TIMING.vignetteFade,
+          });
+        }
       }
     });
 
