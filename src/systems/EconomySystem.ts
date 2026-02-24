@@ -9,6 +9,12 @@ export class EconomySystem {
     EventBus.on('enemy-killed', (data: { goldValue: number }) => {
       this.earnGold(data.goldValue);
     });
+
+    EventBus.on('wave-complete', (data: { wave: number }) => {
+      // Bonus: 10 base + 5 per wave
+      const bonus = 10 + (data.wave * 5);
+      this.earnGold(bonus);
+    });
   }
 
   getGold(): number {

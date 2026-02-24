@@ -65,6 +65,7 @@ export class UpgradeSystem {
     this.turret.knockback = TURRET_BASE_KNOCKBACK + (effects.knockbackForce || 0);
     this.turret.range = TURRET_BASE_RANGE + (effects.rangeBonus || 0);
     this.turret.critChance = effects.critChance || 0;
+    this.turret.multishot = 1 + (effects.multishot || 0);
 
     const newMaxHealth = TURRET_BASE_HP + (effects.maxHealthBonus || 0);
     const healthDiff = newMaxHealth - this.turret.maxHealth;

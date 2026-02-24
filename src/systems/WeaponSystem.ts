@@ -18,7 +18,7 @@ export class WeaponSystem {
     this.scene = scene;
     this.turret = turret;
     this.projectilePool = projectilePool;
-    this.activeWeapon = WEAPONS['basic'];
+    this.activeWeapon = WEAPONS['blaster'];
   }
 
   setEnemyPool(pool: EnemyPool) {
@@ -59,17 +59,33 @@ export class WeaponSystem {
     const flashX = this.turret.x + Math.cos(angle) * barrelLength;
     const flashY = this.turret.y + Math.sin(angle) * barrelLength;
 
+    const multishot = this.turret.multishot || 1;
+
     switch (this.activeWeapon.pattern) {
       case 'single':
-        this.fireSingle(angle);
+        if (multishot > 1) {
+          // Tight 5 to 10 degree spread for multishot
+          const spreadArc = Math.min(10, 5 + (multishot - 1) * 2.5);
+          this.fireSpread(angle, multishot, spreadArc);
+        } else {
+          this.fireSingle(angle);
+        }
         break;
       case 'spread':
-        this.fireSpread(angle);
+        // Cannon weapon gets slightly wider with multishot, but base is 30
+        const cannonBaseSpread = this.activeWeapon.spreadAngle || 30;
+        const cannonSpreadArc = cannonBaseSpread + (multishot - 1) * 5;
+        this.fireSpread(angle, (this.activeWeapon.spreadCount || 5) + (multishot - 1) * 2, cannonSpreadArc);
+        break;
+      case 'beam':
+        this.fireBeam(angle, target, multishot);
         break;
       case 'chain':
         this.fireChain(target);
         break;
     }
+
+    this.turret.applyRecoil(angle);
 
     EventBus.emit('weapon-fired', this.activeWeapon.id);
     EventBus.emit('weapon-fired-vfx', { x: flashX, y: flashY });
@@ -92,18 +108,22 @@ export class WeaponSystem {
     });
   }
 
-  private fireSpread(baseAngle: number) {
-    const count = this.activeWeapon.spreadCount || 5;
-    const totalArc = Phaser.Math.DegToRad(this.activeWeapon.spreadAngle || 30);
+  private fireSpread(baseAngle: number, count: number, totalArcDeg: number) {
+    const totalArc = Phaser.Math.DegToRad(totalArcDeg);
     const startAngle = baseAngle - totalArc / 2;
     const step = count > 1 ? totalArc / (count - 1) : 0;
 
     for (let i = 0; i < count; i++) {
+      // Small offset to ensure exact mathematical centering
+      // If count is even (e.g., 2), we want to shoot on either side of the center.
+      // If count is odd (e.g., 3), one shot goes straight down the middle.
+      let finalAngle = startAngle + step * i;
+      if (count === 1) finalAngle = baseAngle;
       const { damage, isCrit } = this.turret.getEffectiveDamage();
       this.projectilePool.fire({
         x: this.turret.x,
         y: this.turret.y,
-        angle: startAngle + step * i,
+        angle: finalAngle,
         speed: this.activeWeapon.projectileSpeed,
         damage,
         knockback: this.activeWeapon.knockback + this.turret.knockback,
@@ -113,6 +133,50 @@ export class WeaponSystem {
         textureKey: this.activeWeapon.textureKey,
         isCrit,
       });
+    }
+  }
+
+  private fireBeam(baseAngle: number, target: Enemy, multishot: number) {
+    // Continuous Neon Laser - raycast mock
+    const { damage, isCrit } = this.turret.getEffectiveDamage();
+    const length = 1000;
+
+    // Create laser visuals
+    const count = multishot;
+    const totalArc = Phaser.Math.DegToRad(multishot > 1 ? 20 : 0);
+    const startAngle = baseAngle - totalArc / 2;
+    const step = count > 1 ? totalArc / (count - 1) : 0;
+
+    for (let i = 0; i < count; i++) {
+      const angle = startAngle + step * i;
+      const endX = this.turret.x + Math.cos(angle) * length;
+      const endY = this.turret.y + Math.sin(angle) * length;
+
+      const line = this.scene.add.line(0, 0, this.turret.x, this.turret.y, endX, endY, 0x00ffff, 0.8);
+      line.setOrigin(0, 0);
+      line.setLineWidth(4);
+      line.setBlendMode('ADD');
+
+      this.scene.tweens.add({
+        targets: line,
+        alpha: 0,
+        lineWidth: 0,
+        duration: 200,
+        onComplete: () => line.destroy()
+      });
+
+      // Apply damage immediately to targets in a ray (mocking a line intersection)
+      if (this.enemyPool) {
+        const enemies = this.enemyPool.getActiveEnemies();
+        const lineSeg = new Phaser.Geom.Line(this.turret.x, this.turret.y, endX, endY);
+        for (const e of enemies) {
+          if (!e.active) continue;
+          const circle = new Phaser.Geom.Circle(e.x, e.y, 20); // rough hitbox
+          if (Phaser.Geom.Intersects.LineToCircle(lineSeg, circle)) {
+            e.takeDamage(damage * 0.5, this.turret.knockback, isCrit); // Half damage to balance beam speed
+          }
+        }
+      }
     }
   }
 

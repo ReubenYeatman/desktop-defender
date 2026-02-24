@@ -19,9 +19,9 @@ export interface WeaponDefinition {
 }
 
 export const WEAPONS: Record<string, WeaponDefinition> = {
-  basic: {
-    id: 'basic',
-    name: 'Auto Cannon',
+  blaster: {
+    id: 'blaster',
+    name: 'Projectile Blaster',
     description: 'Reliable single-target shots',
     textureKey: 'projectile-basic',
     baseFireRate: 1.0,
@@ -32,9 +32,9 @@ export const WEAPONS: Record<string, WeaponDefinition> = {
     knockback: 0,
     pattern: 'single',
   },
-  shotgun: {
-    id: 'shotgun',
-    name: 'Scattershot',
+  cannon: {
+    id: 'cannon',
+    name: 'Spread-Shot Cannon',
     description: '5 pellets in a spread',
     textureKey: 'projectile-basic',
     baseFireRate: 0.5,
@@ -49,45 +49,15 @@ export const WEAPONS: Record<string, WeaponDefinition> = {
   },
   laser: {
     id: 'laser',
-    name: 'Laser Beam',
+    name: 'Continuous Neon Laser',
     description: 'Continuous beam, pierces all',
-    textureKey: 'projectile-basic',
-    baseFireRate: 10.0,
+    textureKey: 'particle-white',
+    baseFireRate: 5.0,
     baseDamage: 3,
-    projectileSpeed: 600,
-    projectileLifetime: 500,
+    projectileSpeed: 0,
+    projectileLifetime: 300,
     piercing: 999,
     knockback: 0,
-    pattern: 'single', // Uses fast projectile with high pierce
-  },
-  missile: {
-    id: 'missile',
-    name: 'Missile Launcher',
-    description: 'Slow missiles, splash damage',
-    textureKey: 'projectile-basic',
-    baseFireRate: 0.3,
-    baseDamage: 50,
-    projectileSpeed: 150,
-    projectileLifetime: 3000,
-    piercing: 0,
-    knockback: 60,
-    pattern: 'single',
-    splashRadius: 50,
-  },
-  tesla: {
-    id: 'tesla',
-    name: 'Tesla Coil',
-    description: 'Chains between enemies',
-    textureKey: 'projectile-basic',
-    baseFireRate: 0.8,
-    baseDamage: 15,
-    projectileSpeed: 0,
-    projectileLifetime: 0,
-    piercing: 0,
-    knockback: 0,
-    pattern: 'chain',
-    chainCount: 3,
-    chainRange: 80,
-    chainDamageDecay: 0.7,
+    pattern: 'beam',
   },
 };

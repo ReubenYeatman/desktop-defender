@@ -6,6 +6,7 @@ import { HUDScene } from '../scenes/HUDScene';
 import { UpgradeScene } from '../scenes/UpgradeScene';
 import { GameOverScene } from '../scenes/GameOverScene';
 import { AscensionScene } from '../scenes/AscensionScene';
+import { PauseScene } from '../scenes/PauseScene';
 import { GAME_WIDTH, GAME_HEIGHT, COLOR_BACKGROUND } from './Constants';
 
 export const GAME_CONFIG: Phaser.Types.Core.GameConfig = {
@@ -17,7 +18,7 @@ export const GAME_CONFIG: Phaser.Types.Core.GameConfig = {
   pixelArt: true,
   roundPixels: true,
   scale: {
-    mode: Phaser.Scale.RESIZE,
+    mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
   physics: {
@@ -25,7 +26,8 @@ export const GAME_CONFIG: Phaser.Types.Core.GameConfig = {
     arcade: {
       gravity: { x: 0, y: 0 },
       debug: false,
+      fps: 120, // Increased physics frequency for CCD simulation
     },
   },
-  scene: [BootScene, MainMenuScene, GameScene, HUDScene, UpgradeScene, GameOverScene, AscensionScene],
+  scene: [BootScene, MainMenuScene, GameScene, HUDScene, UpgradeScene, GameOverScene, AscensionScene, PauseScene],
 };

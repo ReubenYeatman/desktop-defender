@@ -38,6 +38,8 @@ export interface RunState {
 export interface GameSettings {
   musicVolume: number;
   sfxVolume: number;
+  screenShake: boolean;
+  bloom: boolean;
   alwaysOnTop: boolean;
 }
 
@@ -53,6 +55,8 @@ export function createDefaultProfile(): PlayerProfile {
     settings: {
       musicVolume: 0.5,
       sfxVolume: 0.7,
+      screenShake: true,
+      bloom: true,
       alwaysOnTop: false,
     },
   };

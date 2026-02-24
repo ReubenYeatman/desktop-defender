@@ -25,8 +25,7 @@ export class HUDScene extends Phaser.Scene {
   // Wave display
   private waveText!: Phaser.GameObjects.Text;
 
-  // Wave announcement
-  private waveAnnounceText!: Phaser.GameObjects.Text;
+  // System Notification (Wave Transition) - Removed in favor of Splash
 
   // Gold display
   private goldText!: Phaser.GameObjects.Text;
@@ -49,97 +48,150 @@ export class HUDScene extends Phaser.Scene {
     const w = this.scale.width;
     const h = this.scale.height;
 
-    // Wave text (top-left, below drag bar) — enhanced with stroke
-    this.waveText = this.add.text(10, 32, 'Wave 1', {
-      fontSize: '18px',
+    // Wave text (top-left) — bold and chunky
+    this.waveText = this.add.text(14, 14, 'WAVE 1', {
+      fontSize: '24px',
+      fontFamily: 'Impact, sans-serif',
+      color: '#ffffff',
+      stroke: '#000000',
+      strokeThickness: 4,
+    });
+
+    // Right-aligned top HUD group (HP and Gold)
+    // Gold Text
+    this.goldText = this.add.text(w - 14, 14, '$0', {
+      fontSize: '20px',
       fontFamily: 'monospace',
+      fontStyle: 'bold',
+      color: '#44ff44', // Green gold text
+      stroke: '#000000',
+      strokeThickness: 3,
+    });
+    this.goldText.setOrigin(1, 0); // Right-aligned
+
+    // HP Bar Setup (top-right, below gold or directly left)
+    const barWidth = 140;
+    const barHeight = 12;
+    // Positioned below the gold text, right aligned
+    const barX = w - barWidth - 14;
+    const barY = 40;
+
+    this.hpBarBg = this.add.rectangle(barX, barY, barWidth, barHeight, COLOR_HP_BAR_BG);
+    this.hpBarBg.setOrigin(0, 0);
+    this.hpBarFill = this.add.rectangle(barX, barY, barWidth, barHeight, 0xff2244); // Red HP
+    this.hpBarFill.setOrigin(0, 0);
+
+    // HP Text is placed inside the bar, centered
+    this.hpText = this.add.text(barX + barWidth / 2, barY + barHeight / 2 - 1, '100 / 100', {
+      fontSize: '12px',
+      fontFamily: 'monospace',
+      fontStyle: 'bold',
+      color: '#ffffff',
+      stroke: '#000000',
+      strokeThickness: 3,
+    });
+    this.hpText.setOrigin(0.5, 0.5);
+
+    // Bottom HUD area (Level / XP)
+    const bottomBarWidth = w - 100;
+    const bottomBarY = h - 20;
+    const bottomBarX = 14;
+
+    this.levelText = this.add.text(bottomBarX, bottomBarY - 22, 'Lv. 1', {
+      fontSize: '18px',
+      fontFamily: 'Impact, sans-serif',
       color: '#ffffff',
       stroke: '#000000',
       strokeThickness: 3,
     });
 
-    // HP bar (top center)
-    const barWidth = 120;
-    const barHeight = 10;
-    const barX = w / 2 - barWidth / 2;
-    const barY = 34;
-
-    this.hpBarBg = this.add.rectangle(barX, barY, barWidth, barHeight, COLOR_HP_BAR_BG);
-    this.hpBarBg.setOrigin(0, 0);
-    this.hpBarFill = this.add.rectangle(barX, barY, barWidth, barHeight, COLOR_HP_BAR);
-    this.hpBarFill.setOrigin(0, 0);
-
-    this.hpText = this.add.text(barX + barWidth + 6, barY - 2, '100/100', {
-      fontSize: '11px',
+    this.levelPercentText = this.add.text(bottomBarX + bottomBarWidth + 4, bottomBarY - 20, '[0%] 0 / 100', {
+      fontSize: '14px',
       fontFamily: 'monospace',
-      color: '#44ff44',
+      fontStyle: 'bold',
+      color: '#ffffff',
+      stroke: '#000000',
+      strokeThickness: 3,
     });
+    this.levelPercentText.setOrigin(1, 0); // Right-aligned to bar edge
 
-    // XP bar (below HP bar)
-    const xpY = barY + barHeight + 4;
-    this.xpBarBg = this.add.rectangle(barX, xpY, barWidth, 6, COLOR_XP_BAR_BG);
+    // XP Bar (yellow)
+    this.xpBarBg = this.add.rectangle(bottomBarX, bottomBarY, bottomBarWidth, 8, COLOR_XP_BAR_BG);
     this.xpBarBg.setOrigin(0, 0);
-    this.xpBarFill = this.add.rectangle(barX, xpY, barWidth, 6, COLOR_XP_BAR);
+    this.xpBarFill = this.add.rectangle(bottomBarX, bottomBarY, bottomBarWidth, 8, 0xffcc00); // Yellow XP
     this.xpBarFill.setOrigin(0, 0);
     this.xpBarFill.setScale(0, 1);
 
-    this.levelText = this.add.text(barX + barWidth + 6, xpY - 2, 'Lv.1', {
-      fontSize: '10px',
-      fontFamily: 'monospace',
-      color: '#4488ff',
-    });
+    // Upgrade button (bottom-right, orange rounded button)
+    const btnSize = 42;
+    const btnX = w - btnSize - 14;
+    const btnY = h - btnSize - 14;
 
-    // Level progress bar (below XP bar)
-    const levelBarY = xpY + 10;
-    this.levelProgressBg = this.add.rectangle(barX, levelBarY, barWidth, 4, COLOR_LEVEL_BAR_BG);
-    this.levelProgressBg.setOrigin(0, 0);
-    this.levelProgressFill = this.add.rectangle(barX, levelBarY, barWidth, 4, COLOR_LEVEL_BAR);
-    this.levelProgressFill.setOrigin(0, 0);
-    this.levelProgressFill.setScale(0, 1);
+    const upgradeBg = this.add.graphics();
+    upgradeBg.fillStyle(0xed8936, 1);
+    upgradeBg.fillRoundedRect(btnX, btnY, btnSize, btnSize, 10);
+    upgradeBg.lineStyle(2, 0xd65c00); // Darker orange stroke
+    upgradeBg.strokeRoundedRect(btnX, btnY, btnSize, btnSize, 10);
 
-    this.levelPercentText = this.add.text(barX + barWidth + 6, levelBarY - 3, '0%', {
-      fontSize: '9px',
-      fontFamily: 'monospace',
-      color: '#8866ff',
-    });
-
-    // Wave announcement text (centered, hidden by default)
-    this.waveAnnounceText = this.add.text(w / 2, h / 2, '', {
-      fontSize: '32px',
-      fontFamily: 'monospace',
+    // Thick white chevron pointing down/up
+    const upgradeChevron = this.add.text(btnX + btnSize / 2, btnY + btnSize / 2 - 2, 'v', {
+      fontSize: '28px',
+      fontFamily: 'Arial, sans-serif',
+      fontStyle: 'bold',
       color: '#ffffff',
-      stroke: '#000000',
-      strokeThickness: 4,
-      align: 'center',
-    });
-    this.waveAnnounceText.setOrigin(0.5, 0.5);
-    this.waveAnnounceText.setAlpha(0);
-    this.waveAnnounceText.setDepth(200);
+    }).setOrigin(0.5, 0.5);
+    // Flatten it to look more like a wide chevron
+    upgradeChevron.scaleY = 0.6;
+    upgradeChevron.scaleX = 1.4;
 
-    // Gold (bottom-left)
-    this.goldText = this.add.text(10, h - 24, 'Gold: 0', {
-      fontSize: '13px',
-      fontFamily: 'monospace',
-      color: '#ffd700',
-    });
-
-    // Upgrade button (bottom-right)
-    const btnX = w - 80;
-    const btnY = h - 28;
-    const upgradeBtn = this.add.rectangle(btnX, btnY, 70, 22, 0x335577);
-    upgradeBtn.setOrigin(0, 0);
+    const upgradeBtn = this.add.zone(btnX, btnY, btnSize, btnSize).setOrigin(0, 0);
     upgradeBtn.setInteractive({ useHandCursor: true });
-    this.add.text(btnX + 8, btnY + 3, 'Upgrades', {
-      fontSize: '12px',
-      fontFamily: 'monospace',
-      color: '#ffffff',
-    });
+
+    let upgradeDebounce = false;
 
     upgradeBtn.on('pointerdown', () => {
+      if (upgradeDebounce) return;
+      upgradeDebounce = true;
+      this.time.delayedCall(200, () => upgradeDebounce = false);
+
+      // Button press visual feedback
+      upgradeBg.clear();
+      upgradeBg.fillStyle(0xd65c00, 1); // Darker
+      upgradeBg.fillRoundedRect(btnX, btnY, btnSize, btnSize, 10);
+
+      this.time.delayedCall(100, () => {
+        if (this.scene.isActive()) {
+          upgradeBg.clear();
+          upgradeBg.fillStyle(0xed8936, 1);
+          upgradeBg.lineStyle(2, 0xd65c00);
+          upgradeBg.fillRoundedRect(btnX, btnY, btnSize, btnSize, 10);
+          upgradeBg.strokeRoundedRect(btnX, btnY, btnSize, btnSize, 10);
+        }
+      });
+
       if (this.scene.isActive('UpgradeScene')) {
         this.scene.stop('UpgradeScene');
       } else {
         this.scene.launch('UpgradeScene');
+      }
+    });
+
+    // Settings Gear Icon (top-left under wave)
+    const gearBtn = this.add.text(14, 50, '⚙ SETTINGS', {
+      fontSize: '16px',
+      fontFamily: 'monospace',
+      color: '#aaaaaa',
+    }).setOrigin(0, 0);
+    gearBtn.setInteractive({ useHandCursor: true });
+
+    gearBtn.on('pointerover', () => gearBtn.setColor('#ffffff'));
+    gearBtn.on('pointerout', () => gearBtn.setColor('#aaaaaa'));
+    gearBtn.on('pointerdown', () => {
+      const gameScene = this.scene.get('GameScene') as any;
+      if (gameScene && !this.scene.isPaused('GameScene')) {
+        this.scene.pause('GameScene');
+        this.scene.pause('HUDScene');
+        this.scene.launch('PauseScene', { profile: gameScene.profile });
       }
     });
 
@@ -177,22 +229,21 @@ export class HUDScene extends Phaser.Scene {
 
     const onGoldChanged = (gold: number) => {
       if (!this.scene.isActive()) return;
-      this.goldText.setText(`Gold: ${formatNumber(gold)}`);
+      this.goldText.setText(`$${formatNumber(gold)}`);
     };
 
     const onXPChanged = (data: { current: number; required: number; level: number }) => {
       if (!this.scene.isActive()) return;
       const ratio = data.current / data.required;
       this.xpBarFill.setScale(ratio, 1);
-      this.levelText.setText(`Lv.${data.level}`);
+      this.levelText.setText(`Lv. ${data.level}`);
       // Level progress percentage
-      this.levelProgressFill.setScale(ratio, 1);
-      this.levelPercentText.setText(`${Math.floor(ratio * 100)}%`);
+      this.levelPercentText.setText(`[${(ratio * 100).toFixed(1)}%] ${Math.floor(data.current)} / ${data.required}`);
     };
 
     const onLevelUp = (data: { level: number }) => {
       if (!this.scene.isActive()) return;
-      this.levelText.setText(`Lv.${data.level}`);
+      this.levelText.setText(`Lv. ${data.level}`);
       this.levelText.setColor('#ffff00');
 
       // Scale punch on level text
@@ -256,34 +307,43 @@ export class HUDScene extends Phaser.Scene {
       if (!this.scene.isActive()) return;
 
       // Update persistent wave label
-      const label = data.isBossWave ? `BOSS Wave ${data.wave}` : `Wave ${data.wave}`;
+      const label = data.isBossWave ? `BOSS WAVE ${data.wave}` : `WAVE ${data.wave}`;
       this.waveText.setText(label);
       this.waveText.setColor(data.isBossWave ? '#ff4444' : '#ffffff');
 
-      // Big centered announcement
-      const announceText = data.isBossWave
-        ? `-- BOSS --\nWave ${data.wave}`
-        : `Wave ${data.wave}`;
-      const announceColor = data.isBossWave ? '#ff4444' : '#ffffff';
+      // Center-Screen Splash Text
+      const centerX = this.scale.width / 2;
+      const centerY = this.scale.height / 2;
 
-      this.waveAnnounceText.setText(announceText);
-      this.waveAnnounceText.setColor(announceColor);
-      this.waveAnnounceText.setAlpha(0);
-      this.waveAnnounceText.setScale(0.5);
+      const splashText = this.add.text(centerX, centerY - 50, data.isBossWave ? `BOSS WAVE ${data.wave}` : `WAVE ${data.wave}`, {
+        fontSize: '48px',
+        fontFamily: 'Impact, sans-serif',
+        color: data.isBossWave ? '#ff4444' : '#4a9eff',
+        stroke: '#000000',
+        strokeThickness: 6,
+      }).setOrigin(0.5);
+
+      splashText.setScale(0); // scale 0%
+      splashText.setAlpha(0); // transparent
 
       this.tweens.add({
-        targets: this.waveAnnounceText,
-        alpha: 1,
-        scale: 1,
-        duration: 300,
+        targets: splashText,
+        scale: 1.2, // scale 120%
+        alpha: 1, // fade in
+        duration: 500,
         ease: 'Back.easeOut',
-        hold: 800,
-        yoyo: true,
         onComplete: () => {
-          if (this.scene.isActive()) {
-            this.waveAnnounceText.setAlpha(0);
-          }
-        },
+          this.time.delayedCall(1500, () => {
+            this.tweens.add({
+              targets: splashText,
+              alpha: 0,
+              scale: 0.8,
+              duration: 300,
+              ease: 'Power2',
+              onComplete: () => splashText.destroy()
+            });
+          });
+        }
       });
     };
 
@@ -291,12 +351,48 @@ export class HUDScene extends Phaser.Scene {
       if (!this.scene.isActive()) return;
       this.bossHPContainer.setVisible(true);
       this.bossHPBarFill.setScale(1, 1);
+      this.bossHPText.setText('BOSS');
+    };
+
+    const onBossPhaseStarted = (data: { total: number }) => {
+      if (!this.scene.isActive()) return;
+      this.bossHPText.setText(`DEFLECTING! DESTROY ${data.total} MINIONS!`);
+      this.bossHPText.setColor('#ffff00');
+    };
+
+    const onBossMinionKilled = (data: { remaining: number; total: number }) => {
+      if (!this.scene.isActive()) return;
+      if (data.remaining > 0) {
+        this.bossHPText.setText(`DEFLECTING! DESTROY ${data.remaining} MINIONS!`);
+      } else {
+        this.bossHPText.setText('SYSTEM OVERLOAD...');
+        this.bossHPText.setColor('#ffff00');
+      }
+    };
+
+    const onBossVulnerableStarted = () => {
+      if (!this.scene.isActive()) return;
+      this.bossHPText.setText('BOSS VULNERABLE!');
+      this.bossHPText.setColor('#ff4444');
+    };
+
+    const onBossRecoveryState = () => {
+      if (!this.scene.isActive()) return;
+      this.bossHPText.setText('SYSTEM RECOVERY...');
+      this.bossHPText.setColor('#ffffff');
     };
 
     const onBossDamaged = (data: { current: number; max: number }) => {
       if (!this.scene.isActive()) return;
       const ratio = Math.max(0, data.current / data.max);
       this.bossHPBarFill.setScale(ratio, 1);
+      // Give a brief hit indicator if we haven't overwritten it with phase info
+      if (['BOSS VULNERABLE!', 'SYSTEM OVERLOAD...', 'SYSTEM RECOVERY...'].includes(this.bossHPText.text)) {
+        // stay vulnerable text
+      } else if (!this.bossHPText.text.includes('DEFLECTING')) {
+        this.bossHPText.setText('BOSS');
+        this.bossHPText.setColor('#ff4444');
+      }
     };
 
     const onBossKilled = () => {
@@ -310,6 +406,10 @@ export class HUDScene extends Phaser.Scene {
     EventBus.on('level-up', onLevelUp);
     EventBus.on('wave-started', onWaveStarted);
     EventBus.on('boss-spawned', onBossSpawned);
+    EventBus.on('boss-phase-started', onBossPhaseStarted);
+    EventBus.on('boss-minion-killed', onBossMinionKilled);
+    EventBus.on('boss-vulnerable-started', onBossVulnerableStarted);
+    EventBus.on('boss-recovery-state', onBossRecoveryState);
     EventBus.on('boss-damaged', onBossDamaged);
     EventBus.on('boss-killed', onBossKilled);
 
@@ -320,6 +420,10 @@ export class HUDScene extends Phaser.Scene {
       EventBus.off('level-up', onLevelUp);
       EventBus.off('wave-started', onWaveStarted);
       EventBus.off('boss-spawned', onBossSpawned);
+      EventBus.off('boss-phase-started', onBossPhaseStarted);
+      EventBus.off('boss-minion-killed', onBossMinionKilled);
+      EventBus.off('boss-vulnerable-started', onBossVulnerableStarted);
+      EventBus.off('boss-recovery-state', onBossRecoveryState);
       EventBus.off('boss-damaged', onBossDamaged);
       EventBus.off('boss-killed', onBossKilled);
     });
@@ -330,26 +434,40 @@ export class HUDScene extends Phaser.Scene {
   private updateHPBar() {
     const ratio = Math.max(0, this.currentHP / this.maxHP);
     this.hpBarFill.setScale(ratio, 1);
-    this.hpText.setText(`${Math.floor(this.currentHP)}/${Math.floor(this.maxHP)}`);
+    this.hpText.setText(`${Math.floor(this.currentHP)} / ${Math.floor(this.maxHP)}`);
 
-    if (ratio > 0.5) {
-      this.hpBarFill.setFillStyle(0x44ff44);
-    } else if (ratio > 0.25) {
-      this.hpBarFill.setFillStyle(0xffaa00);
-    } else {
-      this.hpBarFill.setFillStyle(0xff4444);
-    }
+    // We can keep it red or scale it, for now we will just scale the UI
   }
 
   private onResize(gameSize: Phaser.Structs.Size) {
-    this.goldText.setY(gameSize.height - 24);
+    const w = gameSize.width;
+    const h = gameSize.height;
+
+    // Reposition Text/Bars
+    this.goldText.setPosition(w - 14, 14);
+
+    const barWidth = 140;
+    this.hpBarBg.setPosition(w - barWidth - 14, 40);
+    this.hpBarFill.setPosition(w - barWidth - 14, 40);
+    this.hpText.setPosition(w - barWidth - 14 + barWidth / 2, 40 + 6);
+
+    const bottomBarWidth = w - 100;
+    const bottomBarY = h - 20;
+    const bottomBarX = 14;
+
+    this.levelText.setPosition(bottomBarX, bottomBarY - 22);
+    this.levelPercentText.setPosition(bottomBarX + bottomBarWidth + 4, bottomBarY - 20);
+
+    this.xpBarBg.setPosition(bottomBarX, bottomBarY);
+    this.xpBarBg.setSize(bottomBarWidth, 8);
+    this.xpBarFill.setPosition(bottomBarX, bottomBarY);
+    this.xpBarFill.setSize(bottomBarWidth, 8);
+
     // Reposition boss HP bar on resize
     const bossBarWidth = 160;
     this.bossHPContainer.setPosition(
-      gameSize.width / 2 - bossBarWidth / 2,
-      gameSize.height - 50
+      w / 2 - bossBarWidth / 2,
+      h - 50
     );
-    // Reposition wave announcement
-    this.waveAnnounceText.setPosition(gameSize.width / 2, gameSize.height / 2);
   }
 }

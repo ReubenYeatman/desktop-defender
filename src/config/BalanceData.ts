@@ -14,22 +14,47 @@ export interface WaveConfig {
   bossHealthMultiplier: number;
   bossGoldMultiplier: number;
   bossXpMultiplier: number;
+  bossNumber?: number; // Added to determine the shape of the boss
+  maxConcurrent: number;
 }
 
 export function getWaveConfig(waveNumber: number): WaveConfig {
-  const isBossWave = waveNumber % BOSS_WAVE_INTERVAL === 0 && waveNumber > 0;
+  let isBossWave = false;
+  let bossNumber = 0;
+
+  // Boss intervals: 5, 12, 20, 30, and every 10 after
+  if (waveNumber === 5) {
+    isBossWave = true;
+    bossNumber = 1;
+  } else if (waveNumber === 12) {
+    isBossWave = true;
+    bossNumber = 2;
+  } else if (waveNumber === 20) {
+    isBossWave = true;
+    bossNumber = 3;
+  } else if (waveNumber >= 30 && waveNumber % 10 === 0) {
+    isBossWave = true;
+    bossNumber = 3 + Math.floor((waveNumber - 20) / 10);
+  }
 
   // Enemy count: polynomial growth, infinite
-  const baseCount = 5 + Math.floor(waveNumber * 1.5 + Math.pow(waveNumber, 1.3) * 0.5);
+  // Considerably reduced base count to ensure a smooth, easy start
+  const baseCount = 2 + Math.floor(waveNumber * 0.8 + Math.pow(waveNumber, 1.3) * 0.3);
 
-  // Health: polynomial growth, always increasing
-  const healthMultiplier = 1 + (waveNumber - 1) * 0.15 + Math.pow(waveNumber, 1.4) * 0.02;
+  // Health: compounding +12% per wave
+  const healthMultiplier = Math.pow(1.12, Math.max(0, waveNumber - 1));
 
-  // Speed: capped at 120 to stay playable
-  const speed = Math.min(40 + waveNumber * 1.5, 120);
+  // Speed: compounding +5% per wave, capped at 120
+  const speed = Math.min(40 * Math.pow(1.05, Math.max(0, waveNumber - 1)), 120);
 
-  // Spawn interval: decreases to a floor of 300ms
-  const spawnInterval = Math.max(1200 - waveNumber * 30, 300);
+  // Max Concurrent (spawn density)
+  let maxConcurrent = 10 + Math.floor(waveNumber / 2);
+  if (waveNumber > 10) {
+    maxConcurrent += (waveNumber - 10) * 2;
+  }
+
+  // Spawn interval: starts much slower (e.g. 2000ms), decreases to a floor of 400ms
+  const spawnInterval = Math.max(2000 - waveNumber * 40, 400);
 
   // Gold/XP scale with wave
   const goldValue = Math.floor(5 + waveNumber * 2 + Math.pow(waveNumber, 1.2));
@@ -48,8 +73,10 @@ export function getWaveConfig(waveNumber: number): WaveConfig {
     goldValue,
     xpValue,
     breakTime,
-    bossHealthMultiplier: 5 + waveNumber * 0.5,
-    bossGoldMultiplier: 10,
-    bossXpMultiplier: 5,
+    bossHealthMultiplier: isBossWave ? Math.pow(1.5, bossNumber - 1) : 1,
+    bossGoldMultiplier: isBossWave ? 10 + (bossNumber * 5) : 10,
+    bossXpMultiplier: isBossWave ? 5 + (bossNumber * 2) : 5,
+    bossNumber: isBossWave ? bossNumber : undefined,
+    maxConcurrent,
   };
 }

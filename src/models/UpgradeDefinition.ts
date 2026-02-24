@@ -18,4 +18,5 @@ export interface UpgradeEffects {
   critChance: number;
   rangeBonus: number;
   regenPerTick: number;
+  multishot: number;
 }

@@ -21,6 +21,7 @@ export class Projectile extends Phaser.Physics.Arcade.Sprite {
   public weaponType: string = '';
   public isCrit: boolean = false;
   private lifetimeTimer?: Phaser.Time.TimerEvent;
+  private trailEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y, 'projectile-basic');
@@ -29,6 +30,18 @@ export class Projectile extends Phaser.Physics.Arcade.Sprite {
     this.setActive(false);
     this.setVisible(false);
     (this.body as Phaser.Physics.Arcade.Body).enable = false;
+
+    this.trailEmitter = scene.add.particles(0, 0, 'particle-white', {
+      speed: 0,
+      scale: { start: 0.6, end: 0 },
+      alpha: { start: 0.8, end: 0 },
+      lifespan: 150,
+      tint: 0x00ffff,
+      blendMode: 'ADD',
+      emitting: false
+    });
+    this.trailEmitter.startFollow(this);
+    this.trailEmitter.setDepth(this.depth - 1);
   }
 
   fire(config: ProjectileConfig) {
@@ -36,8 +49,12 @@ export class Projectile extends Phaser.Physics.Arcade.Sprite {
     this.setPosition(config.x, config.y);
     this.setActive(true);
     this.setVisible(true);
-    const body = this.body as Phaser.Physics.Arcade.Body;
-    body.enable = true;
+
+    const pBody = this.body as Phaser.Physics.Arcade.Body;
+    pBody.enable = true;
+
+    // Expand hitbox slightly bounds to prevent tunneling
+    pBody.setCircle(6, -2, -2); // Using a bigger circle relative to size=8
 
     this.damage = config.damage;
     this.knockback = config.knockback;
@@ -45,11 +62,13 @@ export class Projectile extends Phaser.Physics.Arcade.Sprite {
     this.weaponType = config.weaponType;
     this.isCrit = config.isCrit;
 
-    body.setVelocity(
+    pBody.setVelocity(
       Math.cos(config.angle) * config.speed,
       Math.sin(config.angle) * config.speed
     );
     this.setRotation(config.angle);
+
+    this.trailEmitter.start();
 
     // Auto-deactivate after lifetime
     this.lifetimeTimer = this.scene.time.delayedCall(config.lifetime, () => {
@@ -64,6 +83,7 @@ export class Projectile extends Phaser.Physics.Arcade.Sprite {
     }
     this.setActive(false);
     this.setVisible(false);
+    this.trailEmitter.stop();
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.stop();
     body.enable = false;

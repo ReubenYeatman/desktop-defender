@@ -37,7 +37,7 @@ export class EnemyPool {
 
     const children = this.group.getChildren() as Enemy[];
     for (const enemy of children) {
-      if (!enemy.active) continue;
+      if (!enemy.active || !enemy.isTargetable()) continue;
       const dx = x - enemy.x;
       const dy = y - enemy.y;
       const distSq = dx * dx + dy * dy;

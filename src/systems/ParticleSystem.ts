@@ -20,6 +20,7 @@ export class ParticleSystem {
   private muzzleFlashEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
   private critEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
   private levelUpEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
+  private coreDamageEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
 
   // Bound listener references for cleanup
   private listeners: Array<{ event: string; fn: (...args: any[]) => void }> = [];
@@ -42,29 +43,47 @@ export class ParticleSystem {
 
   private createEmitters(): void {
     // Death explosion — orange/colored particles on enemy death
-    this.deathEmitter = this.scene.add.particles(0, 0, 'particle-orange', {
-      speed: { min: 30, max: 80 },
-      scale: { start: 1.0, end: 0 },
+    this.deathEmitter = this.scene.add.particles(0, 0, 'particle-data', {
+      speed: { min: 80, max: 200 }, // Punchier
+      scale: { start: 1.5, end: 0 }, // Shrink over time
       alpha: { start: 1, end: 0 },
-      lifespan: { min: 200, max: 400 },
+      lifespan: { min: 400, max: 500 }, // 0.5s approx
       frequency: -1,
       emitting: false,
     });
     this.deathEmitter.setDepth(50);
 
-    // Debris — small square fragments that fall
+    // Debris — small square fragments that scatter and litter the ground
     this.debrisEmitter = this.scene.add.particles(0, 0, 'debris-small', {
-      speed: { min: 40, max: 120 },
-      scale: { start: 1.0, end: 0.3 },
-      alpha: { start: 1, end: 0 },
-      lifespan: { min: 300, max: 600 },
+      speed: { min: 20, max: 200 },
+      accelerationX: { random: [-30, 30] }, // Adds small bit of varied drag feel
+      accelerationY: { random: [-30, 30] },
+      scale: { start: 1.0, end: 0.2 },
+      alpha: { start: 0.8, end: 0, ease: 'Expo.easeIn' }, // Fade rapidly at the very end
+      lifespan: 10000, // 10 seconds
       angle: { min: 0, max: 360 },
-      rotate: { min: 0, max: 360 },
-      gravityY: 80,
+      rotate: { random: [0, 360] },
       frequency: -1,
-      emitting: false,
+      emitting: false
     });
-    this.debrisEmitter.setDepth(49);
+    this.debrisEmitter.setDepth(1); // Put debris under player and enemies
+    this.debrisEmitter.particleBringToTop = false; // Add older debris to bottom
+
+    this.scene.events.on('update', (time: number, delta: number) => {
+      // @ts-ignore - Accessing private particles array since Phaser 3 types don't expose it
+      const particles = this.debrisEmitter.particles?.list || this.debrisEmitter.alive || [];
+      for (const p of particles) {
+        if (p.life > 9500) {
+          p.velocityX *= 0.92;
+          p.velocityY *= 0.92;
+        } else {
+          p.velocityX = 0;
+          p.velocityY = 0;
+          p.accelerationX = 0;
+          p.accelerationY = 0;
+        }
+      }
+    });
 
     // Hit sparks — tiny bright particles on projectile impact
     this.hitSparkEmitter = this.scene.add.particles(0, 0, 'particle-spark', {
@@ -111,6 +130,18 @@ export class ParticleSystem {
       tint: [0x44ddff, 0x4488ff, 0xffffff],
     });
     this.levelUpEmitter.setDepth(53);
+
+    // Core Damage Burst
+    this.coreDamageEmitter = this.scene.add.particles(0, 0, 'particle-spark', {
+      speed: { min: 100, max: 250 },
+      scale: { start: 1.5, end: 0 },
+      alpha: { start: 1, end: 0 },
+      lifespan: { min: 300, max: 400 },
+      tint: [0xff0000, 0xff8800],
+      frequency: -1,
+      emitting: false,
+    });
+    this.coreDamageEmitter.setDepth(55);
   }
 
   private bindEvents(): void {
@@ -133,16 +164,23 @@ export class ParticleSystem {
       this.levelUpEmitter.explode(20, data.x, data.y);
     };
 
+    const onTurretDamaged = (data: { current: number; max: number; x: number; y: number }) => {
+      // 8-12 red/orange sparks shooting outward
+      this.coreDamageEmitter.explode(Phaser.Math.Between(8, 12), data.x, data.y);
+    };
+
     EventBus.on('enemy-killed', onEnemyKilled);
     EventBus.on('projectile-hit', onProjectileHit);
     EventBus.on('weapon-fired-vfx', onWeaponFiredVfx);
     EventBus.on('level-up-vfx', onLevelUpVfx);
+    EventBus.on('turret-damaged', onTurretDamaged);
 
     this.listeners.push(
       { event: 'enemy-killed', fn: onEnemyKilled },
       { event: 'projectile-hit', fn: onProjectileHit },
       { event: 'weapon-fired-vfx', fn: onWeaponFiredVfx },
       { event: 'level-up-vfx', fn: onLevelUpVfx },
+      { event: 'turret-damaged', fn: onTurretDamaged }
     );
   }
 
@@ -150,8 +188,8 @@ export class ParticleSystem {
     const color = this.enemyColors[enemyType] ?? 0xff4444;
     this.deathEmitter.setParticleTint(color);
 
-    const count = enemyType === 'boss' ? 20 : Phaser.Math.Between(8, 12);
-    const debrisCount = enemyType === 'boss' ? 10 : Phaser.Math.Between(3, 5);
+    const count = enemyType === 'boss' ? 30 : Phaser.Math.Between(8, 12); // Data fragments
+    const debrisCount = enemyType === 'boss' ? 25 : Phaser.Math.Between(8, 15);
 
     this.deathEmitter.explode(count, x, y);
     this.debrisEmitter.explode(debrisCount, x, y);
@@ -184,5 +222,6 @@ export class ParticleSystem {
     this.muzzleFlashEmitter.destroy();
     this.critEmitter.destroy();
     this.levelUpEmitter.destroy();
+    this.coreDamageEmitter.destroy();
   }
 }

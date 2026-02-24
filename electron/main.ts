@@ -1,20 +1,28 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, screen } from 'electron';
 import path from 'path';
 import fs from 'fs/promises';
+
+app.disableHardwareAcceleration();
 
 let mainWindow: BrowserWindow | null = null;
 
 function createWindow() {
+  const primaryDisplay = screen.getPrimaryDisplay();
+  console.log("Primary Display WorkArea:", primaryDisplay.workArea);
+  const { x, y, width: workAreaWidth } = primaryDisplay.workArea;
+
+  const windowWidth = 600;
+  const windowHeight = 600;
+
   mainWindow = new BrowserWindow({
-    width: 500,
-    height: 500,
-    minWidth: 400,
-    minHeight: 400,
-    maxWidth: 700,
-    maxHeight: 700,
+    width: windowWidth,
+    height: windowHeight,
+    center: true,
+    // x: x + workAreaWidth - windowWidth - 20, // 20px padding from right edge
+    // y: y + 20, // 20px padding from top edge
     frame: false,
-    resizable: true,
-    alwaysOnTop: false,
+    resizable: false,
+    alwaysOnTop: true,
     titleBarStyle: 'hidden',
     trafficLightPosition: { x: 10, y: 10 },
     backgroundColor: '#1a1a2e',
@@ -26,10 +34,18 @@ function createWindow() {
   });
 
   if (process.env.VITE_DEV_SERVER_URL) {
+    console.log("Loading VITE URL:", process.env.VITE_DEV_SERVER_URL);
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
   } else {
+    console.log("Loading Local File");
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   }
+
+  mainWindow.once('ready-to-show', () => {
+    mainWindow?.show();
+    mainWindow?.focus();
+    console.log("Window is ready to show and focused");
+  });
 
   mainWindow.on('closed', () => {
     mainWindow = null;

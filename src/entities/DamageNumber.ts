@@ -23,16 +23,16 @@ export class DamageNumber extends Phaser.GameObjects.Text {
 
     if (isCrit) {
       this.setText('CRIT ' + Math.floor(amount).toString() + '!');
-      this.setColor('#ff4444');
-      this.setFontSize(20);
-      this.setStroke('#ffff00', 3);
-      this.setScale(1.3);
+      this.setColor('#ffd700');
+      this.setFontSize(22);
+      this.setStroke('#aa6600', 3);
+      this.setScale(0); // Start at 0 for pop-in effect
     } else {
       this.setText(Math.floor(amount).toString());
       this.setColor('#ffffff');
-      this.setFontSize(14);
+      this.setFontSize(16);
       this.setStroke('#000000', 2);
-      this.setScale(1.0);
+      this.setScale(0); // Start at 0
     }
 
     this.setAlpha(1);
@@ -40,10 +40,10 @@ export class DamageNumber extends Phaser.GameObjects.Text {
     this.scene.tweens.add({
       targets: this,
       y: this.y - (isCrit ? 40 : 30),
-      alpha: 0,
-      scale: isCrit ? 0.8 : 0.6,
-      duration: isCrit ? 800 : 600,
-      ease: 'Power2',
+      alpha: { start: 1, end: 0, ease: 'Expo.easeIn' },
+      scale: { start: 0, end: (isCrit ? 1.2 : 1.0) },
+      duration: isCrit ? 800 : 700,
+      ease: 'Back.easeOut',
       onComplete: () => {
         this.setActive(false);
         this.setVisible(false);

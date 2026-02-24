@@ -1,5 +1,5 @@
-export const GAME_WIDTH = 500;
-export const GAME_HEIGHT = 500;
+export const GAME_WIDTH = 600;
+export const GAME_HEIGHT = 600;
 
 // Turret base stats
 export const TURRET_BASE_HP = 100;
@@ -17,10 +17,11 @@ export const DAMAGE_NUMBER_POOL_SIZE = 30;
 // Wave timing
 export const WAVE_BREAK_DURATION = 3000; // ms
 export const BOSS_WAVE_BREAK_DURATION = 4000;
-export const BOSS_WAVE_INTERVAL = 5; // boss every N waves
+export const BOSS_WAVE_INTERVAL = 1; // boss every N waves
 
 // Colors
 export const COLOR_BACKGROUND = 0x1a1a2e;
+export const COLOR_BACKGROUND_LIGHT = 0x222238; // Slightly lighter for checkerboard
 export const COLOR_TURRET = 0x4a9eff;
 export const COLOR_TURRET_BARREL = 0x7bbcff;
 export const COLOR_ENEMY_GRUNT = 0xff4444;
@@ -49,6 +50,8 @@ export const COLOR_BOSS_HP_BAR = 0xff2222;
 export const COLOR_BOSS_HP_BAR_BG = 0x441111;
 export const COLOR_LEVEL_BAR = 0x6644ff;
 export const COLOR_LEVEL_BAR_BG = 0x222233;
+export const COLOR_DAMAGE_CORE_FLASH = 0xff0000;
+export const COLOR_TEXT_GOLD = 0xffd700;
 
 // Rarity colors
 export const RARITY_COLORS = {

@@ -16,6 +16,7 @@ import { SaveManager } from '../managers/SaveManager';
 import { EventBus } from '../managers/EventBus';
 import type { PlayerProfile } from '../models/GameState';
 import { createDefaultProfile } from '../models/GameState';
+import { COLOR_BACKGROUND, COLOR_BACKGROUND_LIGHT } from '../config/Constants';
 
 export class GameScene extends Phaser.Scene {
   private turret!: Turret;
@@ -34,6 +35,9 @@ export class GameScene extends Phaser.Scene {
   private enemiesKilled: number = 0;
   private autoSaveTimer: number = 0;
   private gameOver: boolean = false;
+
+  private bgGraphics!: Phaser.GameObjects.Graphics;
+  private redVignette!: Phaser.GameObjects.Rectangle;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -58,6 +62,8 @@ export class GameScene extends Phaser.Scene {
 
     // Initialize turret
     this.turret = new Turret(this, centerX, centerY);
+
+    this.createCheckeredBackground();
 
     // Apply ascension bonuses
     const ascensionSystem = new AscensionSystem();
@@ -84,14 +90,14 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.overlap(
       this.projectilePool.group,
       this.enemyPool.group,
-      this.combatSystem.onProjectileHitEnemy.bind(this.combatSystem)
+      this.combatSystem.onProjectileHitEnemy.bind(this.combatSystem) as any
     );
 
     const turretZone = this.turret.body.gameObject;
     this.physics.add.overlap(
       turretZone,
       this.enemyPool.group,
-      this.combatSystem.onEnemyReachTurret.bind(this.combatSystem)
+      this.combatSystem.onEnemyReachTurret.bind(this.combatSystem) as any
     );
 
     // Initialize particle system (event-driven, self-wiring)
@@ -100,14 +106,28 @@ export class GameScene extends Phaser.Scene {
     // Launch HUD
     this.scene.launch('HUDScene');
 
-    // Track kills
-    EventBus.on('enemy-killed', () => {
+    // Create the red vignette overlay for damage
+    this.redVignette = this.add.rectangle(centerX, centerY, this.scale.width, this.scale.height, 0xff0000, 1);
+    this.redVignette.setAlpha(0);
+    this.redVignette.setDepth(999);
+    this.redVignette.setBlendMode('ADD');
+
+    // Track kills and spawn credits
+    EventBus.on('enemy-killed', (data: { x: number; y: number; goldValue: number; enemyType: string }) => {
       this.enemiesKilled++;
+
+      if (data.goldValue > 0) {
+        const numCredits = data.enemyType === 'boss' ? 10 : Phaser.Math.Between(1, 3);
+        for (let i = 0; i < numCredits; i++) {
+          this.spawnFloatingCredit(data.x, data.y);
+        }
+      }
     });
 
-    // Track wave for loot
+    // Track wave for loot and grid pulse
     EventBus.on('wave-started', (data: { wave: number }) => {
       this.lootSystem.setCurrentWave(data.wave);
+      this.pulseBackground();
     });
 
     // Relay level-up to VFX system with turret position
@@ -115,12 +135,28 @@ export class GameScene extends Phaser.Scene {
       EventBus.emit('level-up-vfx', { x: this.turret.x, y: this.turret.y });
     });
 
-    // Screen shake on turret damage
+    // Screen shake, Red Vignette, and Grid pulse on turret damage
     EventBus.on('turret-damaged', (data: { current: number; max: number }) => {
       if (data.current > 0 && data.current < data.max) {
         const ratio = data.current / data.max;
         const intensity = ratio < 0.25 ? 0.008 : 0.004;
         this.shakeCamera(intensity, 80);
+
+        // Flash red vignette
+        this.redVignette.setAlpha(0.3);
+        this.tweens.add({
+          targets: this.redVignette,
+          alpha: 0,
+          duration: 500,
+        });
+      }
+    });
+
+    // Heal at the end of every wave (e.g. 15% of max HP)
+    EventBus.on('wave-heal', () => {
+      if (this.turret && this.turret.currentHealth > 0) {
+        const healAmt = Math.floor(this.turret.maxHealth * 0.15);
+        this.turret.heal(healAmt);
       }
     });
 
@@ -131,7 +167,20 @@ export class GameScene extends Phaser.Scene {
 
     EventBus.on('boss-killed', () => {
       this.shakeCamera(0.015, 300);
+      this.pulseBackground();
     });
+
+    // Pause functionality
+    const pauseFunc = () => {
+      if (!this.gameOver && !this.scene.isPaused('GameScene')) {
+        this.scene.pause('GameScene');
+        this.scene.pause('HUDScene');
+        this.scene.launch('PauseScene', { profile: this.profile });
+      }
+    };
+
+    this.input.keyboard?.on('keydown-ESC', pauseFunc);
+    this.input.keyboard?.on('keydown-P', pauseFunc);
 
     // Handle window resize
     this.scale.on('resize', this.onResize, this);
@@ -167,7 +216,84 @@ export class GameScene extends Phaser.Scene {
   }
 
   private shakeCamera(intensity: number = 0.005, duration: number = 100): void {
-    this.cameras.main.shake(duration, intensity);
+    if (this.profile.settings.screenShake) {
+      this.cameras.main.shake(duration, intensity);
+    }
+  }
+
+  private pulseBackground() {
+    if (!this.bgGraphics) return;
+    this.bgGraphics.setAlpha(1.5);
+    this.tweens.add({
+      targets: this.bgGraphics,
+      alpha: 1,
+      duration: 600,
+      ease: 'Power2'
+    });
+  }
+
+  private spawnFloatingCredit(x: number, y: number) {
+    const minOff = -40;
+    const maxOff = 40;
+    const dropX = x + Phaser.Math.Between(minOff, maxOff);
+    const dropY = y + Phaser.Math.Between(minOff, maxOff);
+
+    // Make the credit visual
+    const credit = this.add.image(x, y, 'particle-yellow');
+    credit.setDepth(10);
+    credit.setScale(1.8);
+
+    // 1) Scatter out
+    this.tweens.add({
+      targets: credit,
+      x: dropX,
+      y: dropY,
+      duration: 300,
+      ease: 'Power2',
+      onComplete: () => {
+        // Wait 0.5s then magnetize
+        this.time.delayedCall(500, () => {
+          // 2) Magnetize to turret with EaseIn
+          this.tweens.add({
+            targets: credit,
+            x: this.turret.x,
+            y: this.turret.y,
+            duration: 500,
+            ease: 'Expo.easeIn',
+            onComplete: () => {
+              credit.destroy();
+            }
+          });
+        });
+      }
+    });
+  }
+
+  private createCheckeredBackground() {
+    const squareSize = 64;
+    const cols = Math.ceil(this.scale.width / squareSize);
+    const rows = Math.ceil(this.scale.height / squareSize);
+
+    // Create a graphics object to draw the pattern
+    this.bgGraphics = this.add.graphics();
+
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        // Alternate colors
+        const isLight = (row + col) % 2 === 0;
+        this.bgGraphics.fillStyle(isLight ? COLOR_BACKGROUND_LIGHT : COLOR_BACKGROUND, 1);
+
+        this.bgGraphics.fillRect(
+          col * squareSize,
+          row * squareSize,
+          squareSize,
+          squareSize
+        );
+      }
+    }
+
+    // Put it at the very bottom
+    this.bgGraphics.setDepth(-1);
   }
 
   private handleGameOver() {

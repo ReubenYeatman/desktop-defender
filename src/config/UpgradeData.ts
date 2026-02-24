@@ -14,12 +14,12 @@ export const UPGRADES: UpgradeDefinition[] = [
   {
     id: 'damage',
     name: 'Damage',
-    description: '+15% damage',
+    description: '+25% base dmg',
     baseCost: 30,
     costMultiplier: 1.40,
     maxLevel: 50,
     unlockLevel: 1,
-    effect: (level) => ({ damageMultiplier: 1 + level * 0.15 }),
+    effect: (level) => ({ damageMultiplier: Math.pow(1.25, level) }),
   },
   {
     id: 'knockback',
@@ -81,4 +81,14 @@ export const UPGRADES: UpgradeDefinition[] = [
     unlockLevel: 10,
     effect: (level) => ({ regenPerTick: level }),
   },
+  {
+    id: 'multishot',
+    name: 'Multishot',
+    description: '+Bullets per burst',
+    baseCost: 200,
+    costMultiplier: 2.0,
+    maxLevel: 3,
+    unlockLevel: 10,
+    effect: (level) => ({ multishot: level }),
+  }
 ];

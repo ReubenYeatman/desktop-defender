@@ -24,6 +24,15 @@ export class BootScene extends Phaser.Scene {
 
   preload() {
     this.createPixelArtTextures();
+    this.load.image('icon_damage', 'assets/ui/icon_damage.png');
+    this.load.image('icon_firerate', 'assets/ui/icon_firerate.png');
+    this.load.image('icon_speed', 'assets/ui/icon_speed.png');
+    this.load.image('icon_knockback', 'assets/ui/icon_knockback.png');
+    this.load.image('icon_fortify', 'assets/ui/icon_fortify.png');
+    this.load.image('icon_greed', 'assets/ui/icon_greed.png');
+    this.load.image('icon_crit', 'assets/ui/icon_crit.png');
+    this.load.image('icon_scope', 'assets/ui/icon_scope.png');
+    this.load.image('icon_regen', 'assets/ui/icon_regen.png');
   }
 
   create() {
@@ -42,10 +51,22 @@ export class BootScene extends Phaser.Scene {
     this.createEnemySwarm();
     this.createEnemyShield();
     this.createEnemyHealer();
+
+    // Geometric Anomalies
+    this.createEnemyGlitch();
+    this.createEnemyTrojan();
+    this.createEnemyFirewall();
+    this.createEnemySeeker();
+    this.createEnemyScout();
+
     this.createBoss();
+    this.createBossMinion();
 
     // === PROJECTILE ===
     this.createProjectile();
+
+    // Data fragments
+    this.generateRectTexture('particle-data', 4, 4, 0xff2222);
 
     // === LOOT DROPS ===
     this.createLootDrop('loot-common', 0xaaaaaa, 0x888888);
@@ -66,150 +87,153 @@ export class BootScene extends Phaser.Scene {
     this.generateRectTexture('debris-medium', 4, 4, 0x888888);
   }
 
-  // --- TURRET BASE: Hexagonal with glow ring ---
+  // --- TURRET BASE: Diamond shaped frame ---
   private createTurretBase() {
-    const size = 32;
+    const size = 48; // A bit larger to fit everything
     const gfx = this.add.graphics();
     const cx = size / 2;
     const cy = size / 2;
 
-    // Outer glow ring
-    gfx.fillStyle(0x2a5e9f, 0.3);
-    gfx.fillCircle(cx, cy, 15);
-
-    // Dark outline
-    gfx.fillStyle(0x1a3a6e, 1);
-    gfx.fillCircle(cx, cy, 12);
-
-    // Inner body
-    gfx.fillStyle(COLOR_TURRET, 1);
-    gfx.fillCircle(cx, cy, 10);
-
-    // Highlight arc
-    gfx.fillStyle(0x7bbcff, 0.6);
-    gfx.fillCircle(cx - 3, cy - 3, 5);
-
-    // Center dot
-    gfx.fillStyle(0xaaddff, 1);
-    gfx.fillCircle(cx, cy, 3);
-
-    // Inner core glow
-    gfx.fillStyle(0xffffff, 0.4);
-    gfx.fillCircle(cx, cy, 1.5);
+    // Diamond frame
+    const hw = 16;
+    gfx.lineStyle(3, 0x4a9eff, 1);
+    gfx.strokePoints([
+      { x: cx, y: cy - hw },
+      { x: cx + hw, y: cy },
+      { x: cx, y: cy + hw },
+      { x: cx - hw, y: cy },
+      { x: cx, y: cy - hw }
+    ]);
+    // Inner pulse glow (faint)
+    gfx.fillStyle(0x4a9eff, 0.2);
+    gfx.fillPath();
 
     gfx.generateTexture('turret-base', size, size);
     gfx.destroy();
   }
 
-  // --- TURRET BARREL: Gradient with muzzle tip ---
+  // --- TURRET BARREL: Represents the inner rotating square ---
   private createTurretBarrel() {
-    const w = 6;
-    const h = 16;
-    const gfx = this.add.graphics();
-
-    // Dark outline
-    gfx.fillStyle(0x1a3a6e, 1);
-    gfx.fillRect(0, 0, w, h);
-
-    // Inner barrel
-    gfx.fillStyle(COLOR_TURRET_BARREL, 1);
-    gfx.fillRect(1, 1, w - 2, h - 2);
-
-    // Highlight stripe
-    gfx.fillStyle(0xaaddff, 0.5);
-    gfx.fillRect(1, 1, 1, h - 2);
-
-    // Muzzle tip
-    gfx.fillStyle(0xccddff, 1);
-    gfx.fillRect(1, 0, w - 2, 2);
-
-    gfx.generateTexture('turret-barrel', w, h);
-    gfx.destroy();
-  }
-
-  // --- ENEMY: Grunt - with eyes ---
-  private createEnemyGrunt() {
     const size = 16;
     const gfx = this.add.graphics();
     const cx = size / 2;
     const cy = size / 2;
 
-    gfx.fillStyle(0x881111, 1);
-    gfx.fillCircle(cx, cy, 7);
-    gfx.fillStyle(COLOR_ENEMY_GRUNT, 1);
-    gfx.fillCircle(cx, cy, 6);
+    gfx.lineStyle(2, 0xffffff, 1);
+    gfx.strokeRect(cx - 6, cy - 6, 12, 12);
 
-    // Eye slit
-    gfx.fillStyle(0x220000, 1);
-    gfx.fillRect(cx - 4, cy - 1, 8, 2);
+    // Directional indicator
+    gfx.fillStyle(0xaaddff, 1);
+    gfx.fillRect(cx - 2, cy - 8, 4, 4);
 
-    // Eye dots
-    gfx.fillStyle(0xffff00, 1);
-    gfx.fillRect(cx - 3, cy - 1, 2, 2);
-    gfx.fillRect(cx + 1, cy - 1, 2, 2);
-
-    // Highlight
-    gfx.fillStyle(0xff8888, 0.5);
-    gfx.fillCircle(cx - 2, cy - 3, 2);
-
-    gfx.generateTexture('enemy-grunt', size, size);
+    gfx.generateTexture('turret-barrel', size, size);
     gfx.destroy();
   }
 
-  // --- ENEMY: Runner - small, streaky ---
-  private createEnemyRunner() {
-    const size = 12;
-    const gfx = this.add.graphics();
-    const cx = size / 2;
-    const cy = size / 2;
-
-    gfx.fillStyle(0x884400, 1);
-    gfx.fillCircle(cx, cy, 5);
-    gfx.fillStyle(COLOR_ENEMY_RUNNER, 1);
-    gfx.fillCircle(cx, cy, 4);
-
-    // Speed streak
-    gfx.fillStyle(0xffcc88, 0.7);
-    gfx.fillRect(cx - 3, cy, 6, 1);
-
-    // Eyes
-    gfx.fillStyle(0xffff00, 1);
-    gfx.fillRect(cx - 2, cy - 2, 1, 1);
-    gfx.fillRect(cx + 1, cy - 2, 1, 1);
-
-    gfx.generateTexture('enemy-runner', size, size);
-    gfx.destroy();
-  }
-
-  // --- ENEMY: Tank - big, armored ---
-  private createEnemyTank() {
+  // --- ENEMY: Grunt - Hollow Ring with glowing core && Digital gear ---
+  private createEnemyGrunt() {
     const size = 24;
     const gfx = this.add.graphics();
     const cx = size / 2;
     const cy = size / 2;
 
-    // Outer armor
-    gfx.fillStyle(0x442222, 1);
-    gfx.fillCircle(cx, cy, 11);
+    // Glowing core
+    gfx.fillStyle(COLOR_ENEMY_GRUNT, 1);
+    gfx.fillCircle(cx, cy, 4);
 
-    // Armor plating (squared look)
-    gfx.fillStyle(0x663333, 1);
-    gfx.fillRect(cx - 9, cy - 9, 18, 18);
+    // Hollow Ring
+    gfx.lineStyle(2, COLOR_ENEMY_GRUNT, 1);
+    gfx.strokeCircle(cx, cy, 8);
 
-    // Inner body
-    gfx.fillStyle(COLOR_ENEMY_TANK, 1);
-    gfx.fillCircle(cx, cy, 8);
+    gfx.generateTexture('enemy-grunt', size, size);
+    gfx.clear();
 
-    // Armor cross
-    gfx.fillStyle(0x553333, 1);
-    gfx.fillRect(cx - 1, cy - 9, 2, 18);
-    gfx.fillRect(cx - 9, cy - 1, 18, 2);
+    // Digital Gear (Broken lines)
+    gfx.lineStyle(2, 0xff8888, 1);
+    // Draw 4 dashed arcs
+    for (let i = 0; i < 4; i++) {
+      gfx.beginPath();
+      gfx.arc(cx, cy, 11, Phaser.Math.DegToRad(i * 90 + 10), Phaser.Math.DegToRad(i * 90 + 80), false);
+      gfx.strokePath();
+    }
+    gfx.generateTexture('enemy-grunt-gear', size, size);
 
-    // Eye slit
-    gfx.fillStyle(0xff2222, 1);
-    gfx.fillRect(cx - 3, cy - 1, 6, 2);
+    gfx.destroy();
+  }
+
+  // --- ENEMY: Runner - sharp, spinning triangle ---
+  private createEnemyRunner() {
+    const size = 16;
+    const gfx = this.add.graphics();
+    const cx = size / 2;
+    const cy = size / 2;
+
+    // Inner bright triangle
+    gfx.fillStyle(COLOR_ENEMY_RUNNER, 1);
+    gfx.fillTriangle(
+      cx, cy - 8,   // Top
+      cx + 8, cy + 6, // Bottom right
+      cx - 8, cy + 6  // Bottom left
+    );
+
+    // Inner core glow
+    gfx.fillStyle(0xffffff, 0.8);
+    gfx.fillTriangle(
+      cx, cy - 4,
+      cx + 4, cy + 3,
+      cx - 4, cy + 3
+    );
+
+    gfx.generateTexture('enemy-runner', size, size);
+    gfx.destroy();
+  }
+
+  // --- ENEMY: Tank - Double-Outlined Square ---
+  private createEnemyTank() {
+    const size = 32;
+    const gfx = this.add.graphics();
+    const cx = size / 2;
+    const cy = size / 2;
+
+    // Inner Square
+    gfx.lineStyle(2, COLOR_ENEMY_TANK, 1);
+    gfx.strokeRect(cx - 8, cy - 8, 16, 16);
+    gfx.fillStyle(0x663333, 0.8);
+    gfx.fillRect(cx - 8, cy - 8, 16, 16);
 
     gfx.generateTexture('enemy-tank', size, size);
+    gfx.clear();
+
+    // Outer Outline (Cracks when health drops)
+    gfx.lineStyle(3, 0xaa5555, 1);
+    gfx.strokeRect(cx - 12, cy - 12, 24, 24);
+    gfx.generateTexture('enemy-tank-armor', size, size);
+
+    // Cracked Outline
+    gfx.clear();
+    gfx.lineStyle(3, 0xaa5555, 1);
+    // Draw broken rect
+    gfx.beginPath();
+    gfx.moveTo(cx - 12, cy - 12);
+    gfx.lineTo(cx + 0, cy - 12); // Gap
+    gfx.moveTo(cx + 12, cy - 12);
+    gfx.lineTo(cx + 12, cy + 0); // Gap
+    gfx.moveTo(cx + 12, cy + 12);
+    gfx.lineTo(cx + 0, cy + 12); // Gap
+    gfx.moveTo(cx - 12, cy + 12);
+    gfx.lineTo(cx - 12, cy + 0); // Gap
+    gfx.strokePath();
+
+    // Add some inner crack lines
+    gfx.lineStyle(1, 0xaa5555, 1);
+    gfx.moveTo(cx - 12, cy - 4);
+    gfx.lineTo(cx - 4, cy - 4);
+    gfx.moveTo(cx + 4, cy + 12);
+    gfx.lineTo(cx + 4, cy + 6);
+    gfx.strokePath();
+
+    gfx.generateTexture('enemy-tank-armor-cracked', size, size);
+
     gfx.destroy();
   }
 
@@ -290,51 +314,207 @@ export class BootScene extends Phaser.Scene {
     gfx.destroy();
   }
 
-  // --- BOSS: Large with skull face and crown ---
-  private createBoss() {
-    const size = 40;
+  // --- ENEMY: Glitch - Flickering Isosceles Triangle ---
+  private createEnemyGlitch() {
+    const size = 20;
     const gfx = this.add.graphics();
     const cx = size / 2;
     const cy = size / 2;
 
-    // Danger aura
-    gfx.fillStyle(0xff0000, 0.15);
-    gfx.fillCircle(cx, cy, 19);
+    gfx.fillStyle(0x00ffcc, 1);
+    gfx.fillTriangle(
+      cx, cy - 10,
+      cx + 8, cy + 8,
+      cx - 8, cy + 8
+    );
+    gfx.generateTexture('enemy-glitch', size, size);
+    gfx.destroy();
+  }
 
-    // Outer ring
-    gfx.fillStyle(0x660000, 1);
-    gfx.fillCircle(cx, cy, 16);
+  // --- ENEMY: Trojan - Nested Concentric Circles ---
+  private createEnemyTrojan() {
+    const size = 32;
+    const gfx = this.add.graphics();
+    const cx = size / 2;
+    const cy = size / 2;
 
-    // Body
-    gfx.fillStyle(COLOR_BOSS, 1);
+    gfx.fillStyle(0x660066, 1);
     gfx.fillCircle(cx, cy, 14);
 
-    // Inner dark
-    gfx.fillStyle(0xcc0000, 1);
-    gfx.fillCircle(cx, cy, 10);
+    gfx.lineStyle(2, 0xff00ff, 1);
+    gfx.strokeCircle(cx, cy, 14);
+    gfx.strokeCircle(cx, cy, 9);
+    gfx.strokeCircle(cx, cy, 4);
 
-    // Eye sockets
-    gfx.fillStyle(0x220000, 1);
-    gfx.fillRect(cx - 6, cy - 4, 4, 4);
-    gfx.fillRect(cx + 2, cy - 4, 4, 4);
+    gfx.generateTexture('enemy-trojan', size, size);
+    gfx.destroy();
+  }
 
-    // Eyes
-    gfx.fillStyle(0xffff00, 1);
-    gfx.fillRect(cx - 5, cy - 3, 2, 2);
-    gfx.fillRect(cx + 3, cy - 3, 2, 2);
+  // --- ENEMY: Firewall - Wide Neon Rectangle ---
+  private createEnemyFirewall() {
+    const width = 64;
+    const height = 16;
+    const gfx = this.add.graphics();
+    const cx = width / 2;
+    const cy = height / 2;
 
-    // Mouth
-    gfx.fillStyle(0x220000, 1);
-    gfx.fillRect(cx - 4, cy + 2, 8, 2);
-    gfx.fillRect(cx - 2, cy + 4, 4, 2);
+    gfx.fillStyle(0xcc3300, 0.8);
+    gfx.fillRect(0, 0, width, height);
 
-    // Crown spikes
-    gfx.fillStyle(0xffaa00, 1);
-    gfx.fillRect(cx - 8, cy - 14, 2, 4);
-    gfx.fillRect(cx - 1, cy - 16, 2, 6);
-    gfx.fillRect(cx + 6, cy - 14, 2, 4);
+    gfx.lineStyle(2, 0xff5500, 1);
+    gfx.strokeRect(0, 0, width, height);
 
+    // Grid pattern
+    gfx.lineStyle(1, 0xffaa00, 0.5);
+    for (let i = 4; i < width; i += 8) {
+      gfx.moveTo(i, 0);
+      gfx.lineTo(i, height);
+    }
+    gfx.strokePath();
+
+    gfx.generateTexture('enemy-firewall', width, height);
+    gfx.destroy();
+  }
+
+  // --- ENEMY: Seeker - Rotating Octagon ---
+  private createEnemySeeker() {
+    const size = 24;
+    const gfx = this.add.graphics();
+    const cx = size / 2;
+    const cy = size / 2;
+
+    const radius = 10;
+    gfx.lineStyle(2, 0xffff00, 1);
+    gfx.fillStyle(0x444400, 0.9);
+
+    const path = [];
+    for (let i = 0; i <= 8; i++) {
+      const angle = (Math.PI * 2 / 8) * i;
+      path.push({
+        x: cx + Math.cos(angle) * radius,
+        y: cy + Math.sin(angle) * radius
+      });
+    }
+
+    gfx.beginPath();
+    gfx.moveTo(path[0].x, path[0].y);
+    for (let i = 1; i < path.length; i++) gfx.lineTo(path[i].x, path[i].y);
+    gfx.closePath();
+    gfx.fillPath();
+    gfx.strokePath();
+
+    // Inner eye
+    gfx.fillStyle(0xff0000, 1);
+    gfx.fillCircle(cx, cy, 3);
+
+    gfx.generateTexture('enemy-seeker', size, size);
+    gfx.destroy();
+  }
+
+  // --- ENEMY: Scout - Small diamond (From Trojan) ---
+  private createEnemyScout() {
+    const size = 12;
+    const gfx = this.add.graphics();
+    const cx = size / 2;
+    const cy = size / 2;
+
+    gfx.fillStyle(0xff00ff, 1);
+    gfx.beginPath();
+    gfx.moveTo(cx, cy - 6);
+    gfx.lineTo(cx + 6, cy);
+    gfx.lineTo(cx, cy + 6);
+    gfx.lineTo(cx - 6, cy);
+    gfx.closePath();
+    gfx.fillPath();
+
+    gfx.generateTexture('enemy-scout', size, size);
+    gfx.destroy();
+  }
+
+  // --- BOSS: Geometric shapes (Hexagon, Octagon, Star) with nested outlines ---
+  private createBoss() {
+    const size = 80;
+    const cx = size / 2;
+    const cy = size / 2;
+
+    // Base texture (empty, invisible) just for physics
+    const gfx = this.add.graphics();
+    gfx.fillStyle(0x000000, 0);
+    gfx.fillCircle(cx, cy, 20);
     gfx.generateTexture('enemy-boss', size, size);
+
+    // Boss 1: Hexagon Parts
+    const createPolygon = (key: string, points: number, radius: number, color: number, lineWidth: number) => {
+      gfx.clear();
+      gfx.lineStyle(lineWidth, color, 1);
+      const angleStep = (Math.PI * 2) / points;
+      const path = [];
+      for (let i = 0; i <= points; i++) {
+        path.push({
+          x: cx + Math.cos(i * angleStep) * radius,
+          y: cy + Math.sin(i * angleStep) * radius
+        });
+      }
+      gfx.strokePoints(path);
+      gfx.generateTexture(key, size, size);
+    };
+
+    // Hexagon (Boss 1)
+    createPolygon('boss-hex-outer', 6, 30, 0xff2222, 4);
+    createPolygon('boss-hex-mid', 6, 22, 0xff5555, 3);
+    createPolygon('boss-hex-inner', 6, 14, 0xff8888, 2);
+
+    // Octagon (Boss 2)
+    createPolygon('boss-oct-outer', 8, 35, 0xff00ff, 4);
+    createPolygon('boss-oct-mid', 8, 25, 0xff44ff, 3);
+    createPolygon('boss-oct-inner', 8, 15, 0xff88ff, 2);
+
+    // Star (Boss 3)
+    gfx.clear();
+    const createStar = (key: string, outerRadius: number, innerRadius: number, color: number, lineWidth: number) => {
+      gfx.clear();
+      gfx.lineStyle(lineWidth, color, 1);
+      const points = 5;
+      const angleStep = Math.PI / points;
+      const path = [];
+      for (let i = 0; i <= points * 2; i++) {
+        const r = i % 2 === 0 ? outerRadius : innerRadius;
+        path.push({
+          x: cx + Math.cos(i * angleStep) * r,
+          y: cy + Math.sin(i * angleStep) * r
+        });
+      }
+      gfx.strokePoints(path);
+      gfx.generateTexture(key, size, size);
+    };
+
+    createStar('boss-star-outer', 38, 15, 0xffaa00, 4);
+    createStar('boss-star-mid', 28, 10, 0xffcc00, 3);
+    createStar('boss-star-inner', 18, 5, 0xffff00, 2);
+
+    gfx.destroy();
+  }
+
+  // --- BOSS MINION: Small spinning diamond ---
+  private createBossMinion() {
+    const size = 16;
+    const gfx = this.add.graphics();
+    const cx = size / 2;
+    const cy = size / 2;
+
+    gfx.fillStyle(0xff8800, 1);
+    gfx.fillTriangle(
+      cx, cy - 6,
+      cx + 6, cy,
+      cx, cy + 6
+    );
+    gfx.fillTriangle(
+      cx, cy - 6,
+      cx - 6, cy,
+      cx, cy + 6
+    );
+
+    gfx.generateTexture('enemy-boss-minion', size, size);
     gfx.destroy();
   }
 
