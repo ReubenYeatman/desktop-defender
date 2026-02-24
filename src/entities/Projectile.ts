@@ -11,6 +11,7 @@ export interface ProjectileConfig {
   lifetime: number;
   weaponType: string;
   textureKey: string;
+  isCrit: boolean;
 }
 
 export class Projectile extends Phaser.Physics.Arcade.Sprite {
@@ -18,6 +19,7 @@ export class Projectile extends Phaser.Physics.Arcade.Sprite {
   public knockback: number = 0;
   public piercing: number = 0;
   public weaponType: string = '';
+  public isCrit: boolean = false;
   private lifetimeTimer?: Phaser.Time.TimerEvent;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
@@ -41,6 +43,7 @@ export class Projectile extends Phaser.Physics.Arcade.Sprite {
     this.knockback = config.knockback;
     this.piercing = config.piercing;
     this.weaponType = config.weaponType;
+    this.isCrit = config.isCrit;
 
     body.setVelocity(
       Math.cos(config.angle) * config.speed,

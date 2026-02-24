@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import type { Turret } from '../entities/Turret';
 import type { Enemy } from '../entities/Enemy';
 import type { Projectile } from '../entities/Projectile';
+import { EventBus } from '../managers/EventBus';
 
 export class CombatSystem {
   private scene: Phaser.Scene;
@@ -21,7 +22,15 @@ export class CombatSystem {
 
     if (!proj.active || !e.active) return;
 
-    e.takeDamage(proj.damage, proj.knockback);
+    e.takeDamage(proj.damage, proj.knockback, proj.isCrit);
+
+    // Emit hit event for VFX
+    EventBus.emit('projectile-hit', {
+      x: e.x,
+      y: e.y,
+      isCrit: proj.isCrit,
+      weaponType: proj.weaponType,
+    });
 
     if (proj.piercing > 0) {
       proj.piercing--;

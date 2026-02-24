@@ -83,13 +83,13 @@ export class Turret {
     });
   }
 
-  getEffectiveDamage(): number {
+  getEffectiveDamage(): { damage: number; isCrit: boolean } {
     let damage = this.baseDamage;
     const isCrit = Math.random() < this.critChance;
     if (isCrit) {
       damage *= this.critMultiplier;
     }
-    return Math.floor(damage);
+    return { damage: Math.floor(damage), isCrit };
   }
 
   isAlive(): boolean {

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head><title>Icon Generator</title></head>
+<body style="background:#333; display:flex; align-items:center; justify-content:center; height:100vh; flex-direction:column;">
+<canvas id="c" width="512" height="512"></canvas>
+<br>
+<button onclick="download()">Download PNG</button>
+<p style="color:#aaa; font-family:monospace; font-size:12px;">
+  Right-click the canvas and "Save image as..." or click Download.<br>
+  Then convert to .icns on Mac: <code>iconutil -c icns icon.iconset</code><br>
+  Or use cloudconvert.com/png-to-icns
+</p>
+<script>
+const SIZE = 512;
+const c = document.getElementById('c');
+const ctx = c.getContext('2d');
+
+// Background
+ctx.fillStyle = '#1a1a2e';
+roundRect(ctx, 0, 0, SIZE, SIZE, 64);
+ctx.fill();
+
+// Border
+ctx.strokeStyle = '#4a9eff';
+ctx.lineWidth = 6;
+ctx.beginPath();
+roundRect(ctx, 12, 12, SIZE - 24, SIZE - 24, 52);
+ctx.stroke();
+
+// Center dark circle
+ctx.fillStyle = '#0e0e22';
+ctx.beginPath();
+ctx.arc(SIZE/2, SIZE/2 - 10, 170, 0, Math.PI*2);
+ctx.fill();
+
+// Grid lines (subtle)
+ctx.strokeStyle = 'rgba(74,158,255,0.08)';
+ctx.lineWidth = 1;
+for (let i = 40; i < SIZE; i += 40) {
+  ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, SIZE); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(SIZE, i); ctx.stroke();
+}
+
+// Turret outer glow
+ctx.fillStyle = 'rgba(74,158,255,0.15)';
+ctx.beginPath();
+ctx.arc(SIZE/2, SIZE/2 + 10, 100, 0, Math.PI*2);
+ctx.fill();
+
+// Turret base
+ctx.fillStyle = '#1a3a6e';
+ctx.beginPath();
+ctx.arc(SIZE/2, SIZE/2 + 10, 80, 0, Math.PI*2);
+ctx.fill();
+
+ctx.fillStyle = '#4a9eff';
+ctx.beginPath();
+ctx.arc(SIZE/2, SIZE/2 + 10, 70, 0, Math.PI*2);
+ctx.fill();
+
+// Turret highlight
+ctx.fillStyle = 'rgba(123,188,255,0.5)';
+ctx.beginPath();
+ctx.arc(SIZE/2 - 20, SIZE/2 - 10, 35, 0, Math.PI*2);
+ctx.fill();
+
+// Turret center
+ctx.fillStyle = '#aaddff';
+ctx.beginPath();
+ctx.arc(SIZE/2, SIZE/2 + 10, 22, 0, Math.PI*2);
+ctx.fill();
+
+// Core glow
+ctx.fillStyle = 'rgba(255,255,255,0.5)';
+ctx.beginPath();
+ctx.arc(SIZE/2, SIZE/2 + 10, 10, 0, Math.PI*2);
+ctx.fill();
+
+// Barrel outline
+ctx.fillStyle = '#1a3a6e';
+ctx.fillRect(SIZE/2 - 14, SIZE/2 - 90, 28, 90);
+
+// Barrel body
+ctx.fillStyle = '#7bbcff';
+ctx.fillRect(SIZE/2 - 10, SIZE/2 - 86, 20, 82);
+
+// Barrel highlight
+ctx.fillStyle = 'rgba(170,221,255,0.5)';
+ctx.fillRect(SIZE/2 - 10, SIZE/2 - 86, 5, 82);
+
+// Muzzle
+ctx.fillStyle = '#ccddff';
+ctx.fillRect(SIZE/2 - 12, SIZE/2 - 94, 24, 10);
+
+// Muzzle flash dots (decorative)
+ctx.fillStyle = 'rgba(255,255,170,0.6)';
+ctx.beginPath();
+ctx.arc(SIZE/2, SIZE/2 - 100, 8, 0, Math.PI*2);
+ctx.fill();
+ctx.fillStyle = 'rgba(255,255,255,0.4)';
+ctx.beginPath();
+ctx.arc(SIZE/2, SIZE/2 - 100, 4, 0, Math.PI*2);
+ctx.fill();
+
+// Title
+ctx.fillStyle = '#4a9eff';
+ctx.font = 'bold 44px monospace';
+ctx.textAlign = 'center';
+ctx.shadowColor = '#1a3a6e';
+ctx.shadowBlur = 4;
+ctx.shadowOffsetX = 2;
+ctx.shadowOffsetY = 2;
+ctx.fillText('DESKTOP', SIZE/2, SIZE - 70);
+ctx.fillText('DEFENDER', SIZE/2, SIZE - 28);
+ctx.shadowBlur = 0;
+ctx.shadowOffsetX = 0;
+ctx.shadowOffsetY = 0;
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.lineTo(x+w-r, y);
+  ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+  ctx.lineTo(x+w, y+h-r);
+  ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+  ctx.lineTo(x+r, y+h);
+  ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+  ctx.lineTo(x, y+r);
+  ctx.quadraticCurveTo(x, y, x+r, y);
+  ctx.closePath();
+}
+
+function download() {
+  const link = document.createElement('a');
+  link.download = 'icon.png';
+  link.href = c.toDataURL('image/png');
+  link.click();
+}
+</script>
+</body>
+</html>

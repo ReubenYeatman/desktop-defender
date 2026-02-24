@@ -4,13 +4,22 @@
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build",
     "preview": "vite preview",
-    "package": "npm run build && electron-builder --mac",
-    "package:dmg": "npm run build && electron-builder --mac dmg"
+    "package:mac": "npm run build && electron-builder --mac --config electron-builder.config.ts",
+    "package:mac:dmg": "npm run build && electron-builder --mac dmg --config electron-builder.config.ts",
+    "generate-icon": "tsx scripts/generate-icon.ts",
+    "package:win": "npm run build && electron-builder --win --config electron-builder.config.ts",
+    "package:linux": "npm run build && electron-builder --linux --config electron-builder.config.ts"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "game",
+    "tower-defense",
+    "idle",
+    "electron",
+    "phaser"
+  ],
+  "author": "Desktop Defender",
   "license": "ISC",
   "description": "Desktop Defender - Idle auto-battler tower defense game",
   "dependencies": {
@@ -19,6 +28,9 @@
   "devDependencies": {
     "@types/node": "^25.3.0",
     "electron": "^33.4.11",
+    "electron-builder": "^26.8.1",
+    "sharp": "^0.34.5",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vite": "^6.4.1",
     "vite-plugin-electron": "^0.29.0",

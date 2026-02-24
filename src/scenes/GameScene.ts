@@ -11,6 +11,7 @@ import { UpgradeSystem } from '../systems/UpgradeSystem';
 import { LevelingSystem } from '../systems/LevelingSystem';
 import { LootSystem } from '../systems/LootSystem';
 import { AscensionSystem } from '../systems/AscensionSystem';
+import { ParticleSystem } from '../systems/ParticleSystem';
 import { SaveManager } from '../managers/SaveManager';
 import { EventBus } from '../managers/EventBus';
 import type { PlayerProfile } from '../models/GameState';
@@ -28,6 +29,7 @@ export class GameScene extends Phaser.Scene {
   public upgradeSystem!: UpgradeSystem;
   private levelingSystem!: LevelingSystem;
   public lootSystem!: LootSystem;
+  private particleSystem!: ParticleSystem;
   private profile!: PlayerProfile;
   private enemiesKilled: number = 0;
   private autoSaveTimer: number = 0;
@@ -92,6 +94,9 @@ export class GameScene extends Phaser.Scene {
       this.combatSystem.onEnemyReachTurret.bind(this.combatSystem)
     );
 
+    // Initialize particle system (event-driven, self-wiring)
+    this.particleSystem = new ParticleSystem(this);
+
     // Launch HUD
     this.scene.launch('HUDScene');
 
@@ -103,6 +108,29 @@ export class GameScene extends Phaser.Scene {
     // Track wave for loot
     EventBus.on('wave-started', (data: { wave: number }) => {
       this.lootSystem.setCurrentWave(data.wave);
+    });
+
+    // Relay level-up to VFX system with turret position
+    EventBus.on('level-up', () => {
+      EventBus.emit('level-up-vfx', { x: this.turret.x, y: this.turret.y });
+    });
+
+    // Screen shake on turret damage
+    EventBus.on('turret-damaged', (data: { current: number; max: number }) => {
+      if (data.current > 0 && data.current < data.max) {
+        const ratio = data.current / data.max;
+        const intensity = ratio < 0.25 ? 0.008 : 0.004;
+        this.shakeCamera(intensity, 80);
+      }
+    });
+
+    // Screen shake on boss events
+    EventBus.on('boss-spawned', () => {
+      this.shakeCamera(0.01, 200);
+    });
+
+    EventBus.on('boss-killed', () => {
+      this.shakeCamera(0.015, 300);
     });
 
     // Handle window resize
@@ -138,7 +166,12 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  private shakeCamera(intensity: number = 0.005, duration: number = 100): void {
+    this.cameras.main.shake(duration, intensity);
+  }
+
   private handleGameOver() {
+    this.particleSystem.destroy();
     this.scene.stop('HUDScene');
     this.scene.stop('UpgradeScene');
 

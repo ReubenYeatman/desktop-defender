@@ -68,15 +68,29 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     );
   }
 
-  takeDamage(amount: number, knockbackForce: number = 0) {
+  takeDamage(amount: number, knockbackForce: number = 0, isCrit: boolean = false) {
     this.health -= amount;
+
+    // White flash on hit
+    this.setTintFill(0xffffff);
+    this.scene.time.delayedCall(60, () => {
+      if (this.active) this.clearTint();
+    });
 
     EventBus.emit('damage-dealt', {
       x: this.x,
       y: this.y,
       amount,
-      isCrit: false,
+      isCrit,
     });
+
+    // Boss HP tracking
+    if (this.enemyType === 'boss') {
+      EventBus.emit('boss-damaged', {
+        current: Math.max(0, this.health),
+        max: this.maxHealth,
+      });
+    }
 
     if (knockbackForce > 0) {
       const angle = Phaser.Math.Angle.Between(
@@ -99,6 +113,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   }
 
   die() {
+    if (this.enemyType === 'boss') {
+      EventBus.emit('boss-killed', { x: this.x, y: this.y });
+    }
     EventBus.emit('enemy-killed', {
       x: this.x,
       y: this.y,

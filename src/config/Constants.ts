@@ -37,6 +37,19 @@ export const COLOR_XP_BAR = 0x4488ff;
 export const COLOR_XP_BAR_BG = 0x222244;
 export const COLOR_GOLD = 0xffd700;
 
+// Particle / VFX colors
+export const COLOR_PARTICLE_WHITE = 0xffffff;
+export const COLOR_PARTICLE_YELLOW = 0xffff44;
+export const COLOR_PARTICLE_ORANGE = 0xff8844;
+export const COLOR_MUZZLE_FLASH = 0xffffaa;
+export const COLOR_HIT_SPARK = 0xffcc00;
+export const COLOR_LEVEL_UP_GLOW = 0x44ddff;
+export const COLOR_CRIT_PARTICLE = 0xff4444;
+export const COLOR_BOSS_HP_BAR = 0xff2222;
+export const COLOR_BOSS_HP_BAR_BG = 0x441111;
+export const COLOR_LEVEL_BAR = 0x6644ff;
+export const COLOR_LEVEL_BAR_BG = 0x222233;
+
 // Rarity colors
 export const RARITY_COLORS = {
   common: 0xaaaaaa,

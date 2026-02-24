@@ -54,6 +54,11 @@ export class WeaponSystem {
       target.x, target.y
     );
 
+    // Calculate barrel tip position for muzzle flash
+    const barrelLength = 14;
+    const flashX = this.turret.x + Math.cos(angle) * barrelLength;
+    const flashY = this.turret.y + Math.sin(angle) * barrelLength;
+
     switch (this.activeWeapon.pattern) {
       case 'single':
         this.fireSingle(angle);
@@ -67,20 +72,23 @@ export class WeaponSystem {
     }
 
     EventBus.emit('weapon-fired', this.activeWeapon.id);
+    EventBus.emit('weapon-fired-vfx', { x: flashX, y: flashY });
   }
 
   private fireSingle(angle: number) {
+    const { damage, isCrit } = this.turret.getEffectiveDamage();
     this.projectilePool.fire({
       x: this.turret.x,
       y: this.turret.y,
       angle,
       speed: this.activeWeapon.projectileSpeed,
-      damage: this.turret.getEffectiveDamage(),
+      damage,
       knockback: this.activeWeapon.knockback + this.turret.knockback,
       piercing: this.activeWeapon.piercing,
       lifetime: this.activeWeapon.projectileLifetime,
       weaponType: this.activeWeapon.id,
       textureKey: this.activeWeapon.textureKey,
+      isCrit,
     });
   }
 
@@ -91,17 +99,19 @@ export class WeaponSystem {
     const step = count > 1 ? totalArc / (count - 1) : 0;
 
     for (let i = 0; i < count; i++) {
+      const { damage, isCrit } = this.turret.getEffectiveDamage();
       this.projectilePool.fire({
         x: this.turret.x,
         y: this.turret.y,
         angle: startAngle + step * i,
         speed: this.activeWeapon.projectileSpeed,
-        damage: this.turret.getEffectiveDamage(),
+        damage,
         knockback: this.activeWeapon.knockback + this.turret.knockback,
         piercing: 0,
         lifetime: this.activeWeapon.projectileLifetime,
         weaponType: this.activeWeapon.id,
         textureKey: this.activeWeapon.textureKey,
+        isCrit,
       });
     }
   }
@@ -113,12 +123,13 @@ export class WeaponSystem {
     const chainRange = this.activeWeapon.chainRange || 80;
     const decay = this.activeWeapon.chainDamageDecay || 0.7;
 
-    let damage = this.turret.getEffectiveDamage();
+    const { damage: baseDmg, isCrit } = this.turret.getEffectiveDamage();
+    let damage = baseDmg;
     let currentTarget: Enemy | null = target;
     const hit = new Set<Enemy>();
 
     for (let i = 0; i <= chainCount && currentTarget; i++) {
-      currentTarget.takeDamage(damage, 0);
+      currentTarget.takeDamage(damage, 0, i === 0 ? isCrit : false);
       hit.add(currentTarget);
 
       // Draw lightning line visual
