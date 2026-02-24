@@ -17,6 +17,9 @@ import { EventBus } from '../managers/EventBus';
 import type { PlayerProfile } from '../models/GameState';
 import { createDefaultProfile } from '../models/GameState';
 import { COLOR_BACKGROUND, COLOR_BACKGROUND_LIGHT } from '../config/Constants';
+import { UI_THEME } from '../config/UITheme';
+import { TIMING } from '../config/TimingData';
+import { GAMEPLAY_MULTIPLIERS } from '../config/BalanceData';
 
 export class GameScene extends Phaser.Scene {
   private turret!: Turret;
@@ -107,7 +110,7 @@ export class GameScene extends Phaser.Scene {
     this.scene.launch('HUDScene');
 
     // Create the red vignette overlay for damage
-    this.redVignette = this.add.rectangle(centerX, centerY, this.scale.width, this.scale.height, 0xff0000, 1);
+    this.redVignette = this.add.rectangle(centerX, centerY, this.scale.width, this.scale.height, UI_THEME.vignetteColor, 1);
     this.redVignette.setAlpha(0);
     this.redVignette.setDepth(999);
     this.redVignette.setBlendMode('ADD');
@@ -117,7 +120,7 @@ export class GameScene extends Phaser.Scene {
       this.enemiesKilled++;
 
       if (data.goldValue > 0) {
-        const numCredits = data.enemyType === 'boss' ? 10 : Phaser.Math.Between(1, 3);
+        const numCredits = data.enemyType === 'boss' ? GAMEPLAY_MULTIPLIERS.bossKillCredits : Phaser.Math.Between(GAMEPLAY_MULTIPLIERS.normalKillCreditsMin, GAMEPLAY_MULTIPLIERS.normalKillCreditsMax);
         for (let i = 0; i < numCredits; i++) {
           this.spawnFloatingCredit(data.x, data.y);
         }
@@ -143,11 +146,11 @@ export class GameScene extends Phaser.Scene {
         this.shakeCamera(intensity, 80);
 
         // Flash red vignette
-        this.redVignette.setAlpha(0.3);
+        this.redVignette.setAlpha(UI_THEME.vignetteAlpha);
         this.tweens.add({
           targets: this.redVignette,
           alpha: 0,
-          duration: 500,
+          duration: TIMING.vignetteFade,
         });
       }
     });
@@ -155,7 +158,7 @@ export class GameScene extends Phaser.Scene {
     // Heal at the end of every wave (e.g. 15% of max HP)
     EventBus.on('wave-heal', () => {
       if (this.turret && this.turret.currentHealth > 0) {
-        const healAmt = Math.floor(this.turret.maxHealth * 0.15);
+        const healAmt = Math.floor(this.turret.maxHealth * GAMEPLAY_MULTIPLIERS.waveHealPercent);
         this.turret.heal(healAmt);
       }
     });

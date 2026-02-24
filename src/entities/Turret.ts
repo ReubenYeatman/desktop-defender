@@ -5,8 +5,11 @@ import {
   TURRET_BASE_FIRE_RATE,
   TURRET_BASE_RANGE,
   TURRET_BASE_KNOCKBACK,
+  TURRET_RECOIL_DISTANCE,
 } from '../config/Constants';
 import { EventBus } from '../managers/EventBus';
+import { UI_THEME } from '../config/UITheme';
+import { TIMING } from '../config/TimingData';
 import type { Enemy } from './Enemy';
 
 export class Turret {
@@ -84,9 +87,8 @@ export class Turret {
   }
 
   applyRecoil(fireAngle: number) {
-    const recoilDist = 6;
-    const dx = Math.cos(fireAngle + Math.PI) * recoilDist;
-    const dy = Math.sin(fireAngle + Math.PI) * recoilDist;
+    const dx = Math.cos(fireAngle + Math.PI) * TURRET_RECOIL_DISTANCE;
+    const dy = Math.sin(fireAngle + Math.PI) * TURRET_RECOIL_DISTANCE;
 
     this.base.x += dx;
     this.base.y += dy;
@@ -97,11 +99,11 @@ export class Turret {
   takeDamage(amount: number) {
     this.currentHealth = Math.max(0, this.currentHealth - amount);
 
-    // 3-frame Neon Red flash (approx 50ms at 60fps)
+    // Neon Red flash on damage
     if (this.base && this.base.active) {
-      this.base.setTintFill(0xff0000);
-      this.barrel.setTintFill(0xff0000);
-      this.scene.time.delayedCall(50, () => {
+      this.base.setTintFill(UI_THEME.damageFlash);
+      this.barrel.setTintFill(UI_THEME.damageFlash);
+      this.scene.time.delayedCall(TIMING.hitFlashDuration, () => {
         if (this.base && this.base.active) {
           this.base.clearTint();
           this.barrel.clearTint();

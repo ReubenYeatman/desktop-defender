@@ -1,9 +1,11 @@
 import Phaser from 'phaser';
 import { EnemyPool } from './EnemyPool';
-import { getWaveConfig, type WaveConfig } from '../config/BalanceData';
+import { getWaveConfig, ELITE_CONFIG, GAMEPLAY_MULTIPLIERS, type WaveConfig } from '../config/BalanceData';
 import { ENEMY_TYPES, type EnemyDefinition } from '../models/EnemyDefinition';
 import { EventBus } from '../managers/EventBus';
 import type { EnemySpawnConfig } from '../entities/Enemy';
+import { TIMING } from '../config/TimingData';
+import { UI_THEME } from '../config/UITheme';
 
 export class WaveSystem {
   private scene: Phaser.Scene;
@@ -32,7 +34,7 @@ export class WaveSystem {
     this.turretY = turretY;
 
     // Start first wave after a short delay
-    this.waveBreakTimer = 1500;
+    this.waveBreakTimer = TIMING.bossSpawnDelay;
 
     // Listen for enemy kills to track minion deaths
     EventBus.on('enemy-killed', (data: { enemyType: string }) => {
@@ -161,16 +163,10 @@ export class WaveSystem {
 
     // If in boss orbit phase, only spawn minions!
     if (this.bossPhase === 'orbit') {
-      enemyDef = {
-        type: 'boss-minion',
-        textureKey: 'enemy-boss-minion',
-        healthMultiplier: 0.5,
-        speedMultiplier: 1.2,
-        damageMultiplier: 0.5,
-        goldMultiplier: 0.2,
-        xpMultiplier: 0.2,
-        unlocksAtWave: 0
-      };
+      const minionDef = ENEMY_TYPES.find(e => e.type === 'boss-minion');
+      if (minionDef) {
+        enemyDef = minionDef;
+      }
     } else if (this.bossPhase === 'vulnerable') {
       // Stop spawning enemies once boss is vulnerable
       this.enemiesSpawned = this.waveConfig.enemyCount;
@@ -178,8 +174,8 @@ export class WaveSystem {
     }
 
     let isElite = false;
-    if (this.currentWave >= 8 && Math.random() < 0.1) {
-      if (!['boss', 'boss-minion', 'swarm', 'scout'].includes(enemyDef.type)) {
+    if (this.currentWave >= ELITE_CONFIG.unlockWave && Math.random() < ELITE_CONFIG.spawnChance) {
+      if (!ELITE_CONFIG.excludedTypes.includes(enemyDef.type)) {
         isElite = true;
       }
     }
@@ -200,9 +196,9 @@ export class WaveSystem {
     };
 
     if (isElite) {
-      config.health *= 3;
-      config.xpValue *= 2;
-      config.goldValue *= 2;
+      config.health *= ELITE_CONFIG.healthMultiplier;
+      config.xpValue *= ELITE_CONFIG.xpMultiplier;
+      config.goldValue *= ELITE_CONFIG.goldMultiplier;
     }
 
     // Swarm: spawn 3 in a cluster
@@ -229,20 +225,20 @@ export class WaveSystem {
     this.activeBoss.invulnerable = true;
     this.activeBoss.speed = 0; // Stationary
     this.activeBoss.clearTint();
-    this.activeBoss.setTintFill(0xffff00); // Yellow System Overload flash
+    this.activeBoss.setTintFill(UI_THEME.bossVulnerable); // Yellow System Overload flash
 
     // Fire event to notify HUD of Overload
     EventBus.emit('boss-vulnerable-started');
 
-    // 2. Transition to slower pursuit 
-    this.scene.time.delayedCall(3000, () => {
+    // 2. Transition to slower pursuit
+    this.scene.time.delayedCall(TIMING.bossVulnerableDelay, () => {
       if (this.activeBoss?.active) {
         this.activeBoss.clearTint();
-        this.activeBoss.setTint(0xff4444); // Angry reddish tint
+        this.activeBoss.setTint(UI_THEME.bossAngry); // Angry reddish tint
         this.activeBoss.invulnerable = false;
 
-        // Resume pursuit but at a 50% slowed pace (down from 80%)
-        this.activeBoss.speed = this.waveConfig.baseSpeed * 0.5;
+        // Resume pursuit but at a slowed pace
+        this.activeBoss.speed = this.waveConfig.baseSpeed * GAMEPLAY_MULTIPLIERS.bossVulnerableSpeed;
       }
     });
   }
@@ -254,8 +250,8 @@ export class WaveSystem {
       turretX: this.turretX,
       turretY: this.turretY,
       health: Math.floor(this.waveConfig.baseHealth * this.waveConfig.bossHealthMultiplier),
-      speed: Math.floor(this.waveConfig.baseSpeed * 0.6),
-      damage: Math.floor(this.waveConfig.baseDamage * 2),
+      speed: Math.floor(this.waveConfig.baseSpeed * GAMEPLAY_MULTIPLIERS.bossSpeedMultiplier),
+      damage: Math.floor(this.waveConfig.baseDamage * GAMEPLAY_MULTIPLIERS.bossDamageMultiplier),
       xpValue: Math.floor(this.waveConfig.xpValue * this.waveConfig.bossXpMultiplier),
       goldValue: Math.floor(this.waveConfig.goldValue * this.waveConfig.bossGoldMultiplier),
       type: 'boss',

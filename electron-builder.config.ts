@@ -13,8 +13,8 @@ const config: Configuration = {
   ],
   mac: {
     target: [
-      { target: 'dmg', arch: ['x64', 'arm64'] },
-      { target: 'zip', arch: ['x64', 'arm64'] },
+      { target: 'dmg', arch: ['arm64'] },
+      { target: 'zip', arch: ['arm64'] },
     ],
     category: 'public.app-category.games',
     icon: 'build/icon.icns',

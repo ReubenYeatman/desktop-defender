@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { AscensionSystem } from '../systems/AscensionSystem';
 import { formatNumber } from '../utils/FormatUtils';
 import type { PlayerProfile } from '../models/GameState';
+import { UI_THEME } from '../config/UITheme';
 
 export class AscensionScene extends Phaser.Scene {
   private profile!: PlayerProfile;
@@ -22,11 +23,11 @@ export class AscensionScene extends Phaser.Scene {
     const h = this.scale.height;
 
     // Background
-    this.add.rectangle(0, 0, w, h, 0x0a0022).setOrigin(0, 0);
+    this.add.rectangle(0, 0, w, h, UI_THEME.ascensionBg).setOrigin(0, 0);
 
     // Decorative lines
     const lines = this.add.graphics();
-    lines.lineStyle(1, 0x221144, 0.3);
+    lines.lineStyle(1, UI_THEME.ascensionPanel, 0.3);
     for (let y = 0; y < h; y += 30) {
       lines.lineBetween(0, y, w, y);
     }
@@ -42,8 +43,8 @@ export class AscensionScene extends Phaser.Scene {
     }).setOrigin(0.5, 0);
 
     // Ascendium counter
-    const ascBox = this.add.rectangle(w / 2, 66, 180, 22, 0x221144);
-    ascBox.setStrokeStyle(1, 0x553388);
+    const ascBox = this.add.rectangle(w / 2, 66, 180, 22, UI_THEME.ascensionPanel);
+    ascBox.setStrokeStyle(1, UI_THEME.ascensionButton);
 
     this.ascendiumText = this.add.text(w / 2, 66, `Ascendium: ${this.profile.totalAscendium}`, {
       fontSize: '13px',
@@ -61,8 +62,8 @@ export class AscensionScene extends Phaser.Scene {
       const u = upgrades[i];
       const y = startY + i * rowH;
 
-      const rowBg = this.add.rectangle(w / 2, y + (rowH - 2) / 2, w - 20, rowH - 2, 0x1a1144);
-      rowBg.setStrokeStyle(1, 0x332266, 0.5);
+      const rowBg = this.add.rectangle(w / 2, y + (rowH - 2) / 2, w - 20, rowH - 2, UI_THEME.ascensionPanelDark);
+      rowBg.setStrokeStyle(1, UI_THEME.ascensionButtonAlt, 0.5);
 
       this.add.text(16, y + 4, u.name, {
         fontSize: '11px',
@@ -90,8 +91,8 @@ export class AscensionScene extends Phaser.Scene {
       });
 
       const buyBtn = this.add.rectangle(w - 40, y + rowH / 2 - 1, 34, 22,
-        u.canAfford && !u.isMaxed ? 0x6633aa : 0x222233);
-      buyBtn.setStrokeStyle(1, 0x553388);
+        u.canAfford && !u.isMaxed ? UI_THEME.ascensionAccent : UI_THEME.ascensionButtonAlt);
+      buyBtn.setStrokeStyle(1, UI_THEME.ascensionButton);
       buyBtn.setInteractive({ useHandCursor: true });
 
       this.add.text(w - 40, y + rowH / 2 - 1, u.isMaxed ? '--' : 'BUY', {
@@ -103,12 +104,12 @@ export class AscensionScene extends Phaser.Scene {
 
       buyBtn.on('pointerover', () => {
         if (!u.isMaxed && this.profile.totalAscendium >= u.cost) {
-          buyBtn.setFillStyle(0x7744bb);
+          buyBtn.setFillStyle(UI_THEME.ascensionAccentLight);
         }
       });
       buyBtn.on('pointerout', () => {
         const current = this.ascensionSystem.getUpgradeList(this.profile).find(up => up.id === u.id);
-        buyBtn.setFillStyle(current?.canAfford && !current.isMaxed ? 0x6633aa : 0x222233);
+        buyBtn.setFillStyle(current?.canAfford && !current.isMaxed ? UI_THEME.ascensionAccent : UI_THEME.ascensionButtonAlt);
       });
       buyBtn.on('pointerdown', () => {
         if (this.ascensionSystem.purchaseUpgrade(u.id, this.profile)) {
@@ -120,8 +121,8 @@ export class AscensionScene extends Phaser.Scene {
     }
 
     // Start Run button
-    const startBtn = this.add.rectangle(w / 2, h - 40, 170, 38, 0x447744);
-    startBtn.setStrokeStyle(1, 0x558855);
+    const startBtn = this.add.rectangle(w / 2, h - 40, 170, 38, UI_THEME.buttonSuccess);
+    startBtn.setStrokeStyle(1, UI_THEME.buttonSuccessHover);
     startBtn.setInteractive({ useHandCursor: true });
     this.add.text(w / 2, h - 40, 'START RUN', {
       fontSize: '16px',
@@ -130,8 +131,8 @@ export class AscensionScene extends Phaser.Scene {
       fontStyle: 'bold',
     }).setOrigin(0.5, 0.5);
 
-    startBtn.on('pointerover', () => startBtn.setFillStyle(0x558855));
-    startBtn.on('pointerout', () => startBtn.setFillStyle(0x447744));
+    startBtn.on('pointerover', () => startBtn.setFillStyle(UI_THEME.buttonSuccessHover));
+    startBtn.on('pointerout', () => startBtn.setFillStyle(UI_THEME.buttonSuccess));
     startBtn.on('pointerdown', () => {
       this.scene.start('GameScene', { profile: this.profile });
     });
@@ -147,7 +148,7 @@ export class AscensionScene extends Phaser.Scene {
       row.levelText.setText(`Lv.${u.currentLevel}/${u.maxLevel}`);
       row.costText.setText(u.isMaxed ? 'MAX' : formatNumber(u.cost));
       row.costText.setColor(u.canAfford ? '#cc88ff' : '#ff4444');
-      row.buyBtn.setFillStyle(u.canAfford && !u.isMaxed ? 0x6633aa : 0x222233);
+      row.buyBtn.setFillStyle(u.canAfford && !u.isMaxed ? UI_THEME.ascensionAccent : UI_THEME.ascensionButtonAlt);
     }
   }
 }

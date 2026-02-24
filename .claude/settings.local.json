@@ -29,7 +29,13 @@
       "Bash(npx tsx:*)",
       "Bash(npm run package:win:*)",
       "Bash(npx electron-builder:*)",
-      "Bash(CSC_IDENTITY_AUTO_DISCOVERY=false npx electron-builder:*)"
+      "Bash(CSC_IDENTITY_AUTO_DISCOVERY=false npx electron-builder:*)",
+      "Bash(test:*)",
+      "Bash(npm --version:*)",
+      "Bash(node --version:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm run check:hardcoding:*)",
+      "Bash(npm run lint:*)"
     ]
   }
 }

@@ -7,6 +7,7 @@ export const TURRET_BASE_DAMAGE = 10;
 export const TURRET_BASE_FIRE_RATE = 1.0; // shots per second
 export const TURRET_BASE_RANGE = 200;
 export const TURRET_BASE_KNOCKBACK = 0;
+export const TURRET_RECOIL_DISTANCE = 6;
 
 // Pool sizes
 export const ENEMY_POOL_SIZE = 80;

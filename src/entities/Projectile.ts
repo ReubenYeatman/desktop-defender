@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { UI_THEME } from '../config/UITheme';
 
 export interface ProjectileConfig {
   x: number;
@@ -36,7 +37,7 @@ export class Projectile extends Phaser.Physics.Arcade.Sprite {
       scale: { start: 0.6, end: 0 },
       alpha: { start: 0.8, end: 0 },
       lifespan: 150,
-      tint: 0x00ffff,
+      tint: UI_THEME.laserBeam,
       blendMode: 'ADD',
       emitting: false
     });

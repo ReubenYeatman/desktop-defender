@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { EventBus } from '../managers/EventBus';
 import { formatNumber } from '../utils/FormatUtils';
+import { UI_THEME } from '../config/UITheme';
 
 interface UpgradeRow {
   id: string;
@@ -26,6 +27,7 @@ export class UpgradeScene extends Phaser.Scene {
 
   private scrollY: number = 0;
   private maxScroll: number = 0;
+  private panelH: number = 0;
 
   constructor() {
     super({ key: 'UpgradeScene' });
@@ -48,21 +50,21 @@ export class UpgradeScene extends Phaser.Scene {
 
     // Panel
     const panelW = Math.min(w - 30, 330);
-    const panelH = Math.min(h - 50, 410);
+    this.panelH = Math.min(h - 50, 410);
     const panelX = (w - panelW) / 2;
-    const panelY = (h - panelH) / 2;
+    const panelY = (h - this.panelH) / 2;
 
     // Panel shadow
-    this.add.rectangle(panelX + 3, panelY + 3, panelW, panelH, 0x000000, 0.4).setOrigin(0, 0);
+    this.add.rectangle(panelX + 3, panelY + 3, panelW, this.panelH, 0x000000, 0.4).setOrigin(0, 0);
 
     // Panel style (cyan glowing frame)
-    this.panel = this.add.rectangle(panelX, panelY, panelW, panelH, 0x113355, 0.9);
+    this.panel = this.add.rectangle(panelX, panelY, panelW, this.panelH, UI_THEME.panelBg, 0.9);
     this.panel.setOrigin(0, 0);
-    this.panel.setStrokeStyle(3, 0x66ccff);
+    this.panel.setStrokeStyle(3, UI_THEME.accent);
     this.panel.setInteractive(); // Catch clicks so backdrop doesn't close
 
     // Title bar
-    this.add.rectangle(panelX, panelY, panelW, 40, 0x225577).setOrigin(0, 0);
+    this.add.rectangle(panelX, panelY, panelW, 40, UI_THEME.headerBg).setOrigin(0, 0);
     this.add.text(panelX + panelW / 2, panelY + 20, 'DESKTOP DEFENDER:\nSYSTEM UPGRADES', {
       fontSize: '14px',
       fontFamily: 'Impact, sans-serif',
@@ -73,7 +75,7 @@ export class UpgradeScene extends Phaser.Scene {
     }).setOrigin(0.5, 0.5);
 
     // Close button
-    const closeBtn = this.add.rectangle(panelX + panelW - 24, panelY + 8, 20, 20, 0x225577);
+    const closeBtn = this.add.rectangle(panelX + panelW - 24, panelY + 8, 20, 20, UI_THEME.headerBg);
     closeBtn.setOrigin(0, 0);
     closeBtn.setInteractive({ useHandCursor: true });
     this.add.text(panelX + panelW - 14, panelY + 18, 'X', {
@@ -83,13 +85,14 @@ export class UpgradeScene extends Phaser.Scene {
       fontStyle: 'bold',
     }).setOrigin(0.5, 0.5);
 
-    closeBtn.on('pointerover', () => closeBtn.setFillStyle(0x4477aa));
-    closeBtn.on('pointerout', () => closeBtn.setFillStyle(0x225577));
+    closeBtn.on('pointerover', () => closeBtn.setFillStyle(UI_THEME.accentDark));
+    closeBtn.on('pointerout', () => closeBtn.setFillStyle(UI_THEME.headerBg));
     closeBtn.on('pointerdown', () => this.closeScene());
 
     // --- SCROLLING SETUP ---
     // Instead of GeometryMask (which is buggy with scaling), we use a separate camera viewport
-    this.uiCamera = this.cameras.add(panelX, panelY + 40, panelW, panelH - 40);
+    // Account for 40px title bar and 30px credits bar at bottom
+    this.uiCamera = this.cameras.add(panelX, panelY + 40, panelW, this.panelH - 70);
     this.uiCamera.setScroll(0, 0);
 
     // Original camera ignores the scrollable content, uiCamera only renders the scrollable content
@@ -102,13 +105,13 @@ export class UpgradeScene extends Phaser.Scene {
 
     // Bottom Credits panel
     const bottomH = 30;
-    const creditsBg = this.add.rectangle(panelX, panelY + panelH - bottomH, panelW, bottomH, 0x225577).setOrigin(0, 0);
+    const creditsBg = this.add.rectangle(panelX, panelY + this.panelH - bottomH, panelW, bottomH, UI_THEME.headerBg).setOrigin(0, 0);
     creditsBg.setDepth(10);
 
     const gs = this.scene.get('GameScene') as any;
     const initialGold = gs?.economySystem ? gs.economySystem.getGold() : 0;
 
-    const creditsText = this.add.text(panelX + panelW / 2, panelY + panelH - bottomH / 2, `CREDITS: ${initialGold}`, {
+    const creditsText = this.add.text(panelX + panelW / 2, panelY + this.panelH - bottomH / 2, `CREDITS: ${initialGold}`, {
       fontSize: '16px',
       fontFamily: 'Impact, sans-serif',
       color: '#66ccff'
@@ -203,21 +206,21 @@ export class UpgradeScene extends Phaser.Scene {
 
       // Semi-transparent gradient-like bg
       const bg = this.add.graphics();
-      bg.fillStyle(0x1a4a6c, 0.8);
+      bg.fillStyle(UI_THEME.panelBgLight, 0.8);
       bg.fillRoundedRect(startX + 14, y, panelW - 28, rowH, 8);
-      bg.lineStyle(2, 0x66ccff);
+      bg.lineStyle(2, UI_THEME.accent);
       bg.strokeRoundedRect(startX + 14, y, panelW - 28, rowH, 8);
       rowContainer.add(bg);
 
       // Icon Box
-      const iconBg = this.add.rectangle(startX + 38, y + rowH / 2, 40, 40, 0x112240);
-      iconBg.setStrokeStyle(2, 0x66ccff);
+      const iconBg = this.add.rectangle(startX + 38, y + rowH / 2, 40, 40, UI_THEME.progressBg);
+      iconBg.setStrokeStyle(2, UI_THEME.accent);
       rowContainer.add(iconBg);
 
       // Icon
       const icon = this.add.image(startX + 38, y + rowH / 2, iconKey);
       icon.setDisplaySize(28, 28);
-      icon.setTint(0x66ccff);
+      icon.setTint(UI_THEME.accent);
       rowContainer.add(icon);
 
       // Title & Level text
@@ -239,13 +242,13 @@ export class UpgradeScene extends Phaser.Scene {
       // Inline Progress bar background
       const progWidth = panelW - 100;
       const progBg = this.add.graphics();
-      progBg.fillStyle(0x0a192f, 1);
+      progBg.fillStyle(UI_THEME.panelBgDark, 1);
       progBg.fillRoundedRect(startX + 70, y + 26, progWidth, 6, 3);
       rowContainer.add(progBg);
 
       // Progress bar fill (cyan gradient equivalent)
       const fillRatio = u.maxLevel > 0 ? (u.currentLevel / u.maxLevel) : 1;
-      const progressBarFill = this.add.rectangle(startX + 70, y + 26, progWidth * fillRatio, 6, 0x66ccff).setOrigin(0, 0);
+      const progressBarFill = this.add.rectangle(startX + 70, y + 26, progWidth * fillRatio, 6, UI_THEME.accent).setOrigin(0, 0);
       rowContainer.add(progressBarFill);
 
       // Small Desc
@@ -263,7 +266,7 @@ export class UpgradeScene extends Phaser.Scene {
       const btnX = startX + panelW - btnW / 2 - 20;
 
       const costStr = u.isMaxed ? 'MAX LVL' : `UPGRADE\n(${formatNumber(u.cost)} CR)`;
-      const canAffordColor = u.canAfford && !u.isMaxed ? 0x66ccff : 0xaaaaaa;
+      const canAffordColor = u.canAfford && !u.isMaxed ? UI_THEME.accent : UI_THEME.textDisabled;
       const textColor = u.canAfford && !u.isMaxed ? '#0a192f' : '#333333';
 
       const costPill = this.add.graphics();
@@ -289,8 +292,8 @@ export class UpgradeScene extends Phaser.Scene {
       hitZone.on('pointerover', () => {
         if (u.canAfford && !u.isMaxed) {
           bg.clear();
-          bg.fillStyle(0x2d6894, 0.9); // Highlight
-          bg.lineStyle(2, 0xffffff); // Bright border
+          bg.fillStyle(UI_THEME.panelBgHover, 0.9); // Highlight
+          bg.lineStyle(2, UI_THEME.textPrimary); // Bright border
           bg.fillRoundedRect(startX + 14, y, panelW - 28, rowH, 8);
           bg.strokeRoundedRect(startX + 14, y, panelW - 28, rowH, 8);
         }
@@ -298,8 +301,8 @@ export class UpgradeScene extends Phaser.Scene {
 
       hitZone.on('pointerout', () => {
         bg.clear();
-        bg.fillStyle(0x1a4a6c, 0.8);
-        bg.lineStyle(2, 0x66ccff);
+        bg.fillStyle(UI_THEME.panelBgLight, 0.8);
+        bg.lineStyle(2, UI_THEME.accent);
         bg.fillRoundedRect(startX + 14, y, panelW - 28, rowH, 8);
         bg.strokeRoundedRect(startX + 14, y, panelW - 28, rowH, 8);
       });
@@ -317,7 +320,8 @@ export class UpgradeScene extends Phaser.Scene {
 
     // Calculate scroll bounds: we only scroll via the uiCamera now
     const totalHeight = upgrades.length * (rowH + padding) + padding + bottomScrollBuffer;
-    const viewHeight = (this.scale.height - 50) - 40; // Same as panelH - 40
+    // viewHeight = panelH - 70 (40px title bar + 30px credits bar)
+    const viewHeight = this.panelH - 70;
     this.maxScroll = Math.max(0, totalHeight - viewHeight);
   }
 
@@ -340,14 +344,13 @@ export class UpgradeScene extends Phaser.Scene {
       row.progressBarFill.setSize(progWidth * fillRatio, 6);
 
       const costStr = u.isMaxed ? 'MAX LVL' : `UPGRADE\n(${formatNumber(u.cost)} CR)`;
-      const canAffordColor = u.canAfford && !u.isMaxed ? 0x66ccff : 0xaaaaaa;
+      const canAffordColor = u.canAfford && !u.isMaxed ? UI_THEME.accent : UI_THEME.textDisabled;
       const textColor = u.canAfford && !u.isMaxed ? '#0a192f' : '#333333';
 
       row.costText.setText(costStr);
       row.costText.setColor(textColor);
 
       // Update Cost Pill Button graphics
-      // Need to find the pill in the container (it's hardcoded as the 6th element)
       const container = row.bg.parentContainer;
       if (container) {
         const btnW = 55;

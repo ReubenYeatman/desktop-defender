@@ -9,6 +9,7 @@ import {
   COLOR_ENEMY_HEALER,
   COLOR_BOSS,
 } from '../config/Constants';
+import { UI_THEME } from '../config/UITheme';
 
 export class ParticleSystem {
   private scene: Phaser.Scene;
@@ -127,7 +128,7 @@ export class ParticleSystem {
       angle: { min: 0, max: 360 },
       frequency: -1,
       emitting: false,
-      tint: [0x44ddff, 0x4488ff, 0xffffff],
+      tint: [UI_THEME.levelUpGlow, UI_THEME.levelUpGlowAlt, UI_THEME.textPrimary],
     });
     this.levelUpEmitter.setDepth(53);
 
@@ -137,7 +138,7 @@ export class ParticleSystem {
       scale: { start: 1.5, end: 0 },
       alpha: { start: 1, end: 0 },
       lifespan: { min: 300, max: 400 },
-      tint: [0xff0000, 0xff8800],
+      tint: [UI_THEME.explosionCore, UI_THEME.explosionOuter],
       frequency: -1,
       emitting: false,
     });
@@ -185,7 +186,7 @@ export class ParticleSystem {
   }
 
   private emitDeathExplosion(x: number, y: number, enemyType: string): void {
-    const color = this.enemyColors[enemyType] ?? 0xff4444;
+    const color = this.enemyColors[enemyType] ?? UI_THEME.critFlash;
     this.deathEmitter.setParticleTint(color);
 
     const count = enemyType === 'boss' ? 30 : Phaser.Math.Between(8, 12); // Data fragments
@@ -202,7 +203,7 @@ export class ParticleSystem {
         break;
       case 'missile':
         this.hitSparkEmitter.explode(8, x, y);
-        this.deathEmitter.setParticleTint(0xff8844);
+        this.deathEmitter.setParticleTint(UI_THEME.debrisColor);
         this.deathEmitter.explode(6, x, y);
         break;
       default:

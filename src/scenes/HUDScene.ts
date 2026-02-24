@@ -5,6 +5,8 @@ import {
   COLOR_HP_BAR, COLOR_HP_BAR_BG, COLOR_XP_BAR, COLOR_XP_BAR_BG,
   COLOR_LEVEL_BAR, COLOR_LEVEL_BAR_BG, COLOR_BOSS_HP_BAR, COLOR_BOSS_HP_BAR_BG,
 } from '../config/Constants';
+import { UI_THEME } from '../config/UITheme';
+import { TIMING } from '../config/TimingData';
 
 export class HUDScene extends Phaser.Scene {
   // HP bar
@@ -78,7 +80,7 @@ export class HUDScene extends Phaser.Scene {
 
     this.hpBarBg = this.add.rectangle(barX, barY, barWidth, barHeight, COLOR_HP_BAR_BG);
     this.hpBarBg.setOrigin(0, 0);
-    this.hpBarFill = this.add.rectangle(barX, barY, barWidth, barHeight, 0xff2244); // Red HP
+    this.hpBarFill = this.add.rectangle(barX, barY, barWidth, barHeight, UI_THEME.textDanger); // Red HP
     this.hpBarFill.setOrigin(0, 0);
 
     // HP Text is placed inside the bar, centered
@@ -118,7 +120,7 @@ export class HUDScene extends Phaser.Scene {
     // XP Bar (yellow)
     this.xpBarBg = this.add.rectangle(bottomBarX, bottomBarY, bottomBarWidth, 8, COLOR_XP_BAR_BG);
     this.xpBarBg.setOrigin(0, 0);
-    this.xpBarFill = this.add.rectangle(bottomBarX, bottomBarY, bottomBarWidth, 8, 0xffcc00); // Yellow XP
+    this.xpBarFill = this.add.rectangle(bottomBarX, bottomBarY, bottomBarWidth, 8, UI_THEME.textGold); // Yellow XP
     this.xpBarFill.setOrigin(0, 0);
     this.xpBarFill.setScale(0, 1);
 
@@ -128,9 +130,9 @@ export class HUDScene extends Phaser.Scene {
     const btnY = h - btnSize - 14;
 
     const upgradeBg = this.add.graphics();
-    upgradeBg.fillStyle(0xed8936, 1);
+    upgradeBg.fillStyle(UI_THEME.buttonUpgrade, 1);
     upgradeBg.fillRoundedRect(btnX, btnY, btnSize, btnSize, 10);
-    upgradeBg.lineStyle(2, 0xd65c00); // Darker orange stroke
+    upgradeBg.lineStyle(2, UI_THEME.buttonUpgradePressed);
     upgradeBg.strokeRoundedRect(btnX, btnY, btnSize, btnSize, 10);
 
     // Thick white chevron pointing down/up
@@ -156,14 +158,14 @@ export class HUDScene extends Phaser.Scene {
 
       // Button press visual feedback
       upgradeBg.clear();
-      upgradeBg.fillStyle(0xd65c00, 1); // Darker
+      upgradeBg.fillStyle(UI_THEME.buttonUpgradePressed, 1);
       upgradeBg.fillRoundedRect(btnX, btnY, btnSize, btnSize, 10);
 
       this.time.delayedCall(100, () => {
         if (this.scene.isActive()) {
           upgradeBg.clear();
-          upgradeBg.fillStyle(0xed8936, 1);
-          upgradeBg.lineStyle(2, 0xd65c00);
+          upgradeBg.fillStyle(UI_THEME.buttonUpgrade, 1);
+          upgradeBg.lineStyle(2, UI_THEME.buttonUpgradePressed);
           upgradeBg.fillRoundedRect(btnX, btnY, btnSize, btnSize, 10);
           upgradeBg.strokeRoundedRect(btnX, btnY, btnSize, btnSize, 10);
         }
@@ -297,7 +299,7 @@ export class HUDScene extends Phaser.Scene {
         y: levelUpText.y - 30,
         alpha: 0,
         scale: 1.3,
-        duration: 1000,
+        duration: TIMING.levelUpAnimation,
         ease: 'Power2',
         onComplete: () => levelUpText.destroy(),
       });
@@ -333,7 +335,7 @@ export class HUDScene extends Phaser.Scene {
         duration: 500,
         ease: 'Back.easeOut',
         onComplete: () => {
-          this.time.delayedCall(1500, () => {
+          this.time.delayedCall(TIMING.titleFadeIn, () => {
             this.tweens.add({
               targets: splashText,
               alpha: 0,

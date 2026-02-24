@@ -1,11 +1,15 @@
 {
   "name": "desktop-defender",
   "version": "1.0.0",
+  "type": "module",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "lint": "eslint src/",
+    "check:hardcoding": "tsx scripts/check-hardcoding.ts",
+    "check:all": "npm run lint && npm run check:hardcoding",
     "package:mac": "npm run build && electron-builder --mac --config electron-builder.config.ts",
     "package:mac:dmg": "npm run build && electron-builder --mac dmg --config electron-builder.config.ts",
     "generate-icon": "tsx scripts/generate-icon.ts",
@@ -27,8 +31,11 @@
   },
   "devDependencies": {
     "@types/node": "^25.3.0",
+    "@typescript-eslint/eslint-plugin": "^8.56.1",
+    "@typescript-eslint/parser": "^8.56.1",
     "electron": "^33.4.11",
     "electron-builder": "^26.8.1",
+    "eslint": "^10.0.2",
     "sharp": "^0.34.5",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",

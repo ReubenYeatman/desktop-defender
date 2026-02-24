@@ -5,6 +5,8 @@ import type { ProjectilePool } from './ProjectilePool';
 import type { EnemyPool } from './EnemyPool';
 import { WEAPONS, type WeaponDefinition } from '../config/WeaponData';
 import { EventBus } from '../managers/EventBus';
+import { GAMEPLAY_MULTIPLIERS } from '../config/BalanceData';
+import { UI_THEME } from '../config/UITheme';
 
 export class WeaponSystem {
   private scene: Phaser.Scene;
@@ -64,17 +66,17 @@ export class WeaponSystem {
     switch (this.activeWeapon.pattern) {
       case 'single':
         if (multishot > 1) {
-          // Tight 5 to 10 degree spread for multishot
-          const spreadArc = Math.min(10, 5 + (multishot - 1) * 2.5);
+          // Tight spread for multishot
+          const spreadArc = Math.min(10, GAMEPLAY_MULTIPLIERS.multishotSpreadBase + (multishot - 1) * GAMEPLAY_MULTIPLIERS.multishotSpreadPerShot);
           this.fireSpread(angle, multishot, spreadArc);
         } else {
           this.fireSingle(angle);
         }
         break;
       case 'spread':
-        // Cannon weapon gets slightly wider with multishot, but base is 30
+        // Cannon weapon gets slightly wider with multishot
         const cannonBaseSpread = this.activeWeapon.spreadAngle || 30;
-        const cannonSpreadArc = cannonBaseSpread + (multishot - 1) * 5;
+        const cannonSpreadArc = cannonBaseSpread + (multishot - 1) * GAMEPLAY_MULTIPLIERS.cannonSpreadPerMultishot;
         this.fireSpread(angle, (this.activeWeapon.spreadCount || 5) + (multishot - 1) * 2, cannonSpreadArc);
         break;
       case 'beam':
@@ -152,7 +154,7 @@ export class WeaponSystem {
       const endX = this.turret.x + Math.cos(angle) * length;
       const endY = this.turret.y + Math.sin(angle) * length;
 
-      const line = this.scene.add.line(0, 0, this.turret.x, this.turret.y, endX, endY, 0x00ffff, 0.8);
+      const line = this.scene.add.line(0, 0, this.turret.x, this.turret.y, endX, endY, UI_THEME.laserBeam, 0.8);
       line.setOrigin(0, 0);
       line.setLineWidth(4);
       line.setBlendMode('ADD');
@@ -173,7 +175,7 @@ export class WeaponSystem {
           if (!e.active) continue;
           const circle = new Phaser.Geom.Circle(e.x, e.y, 20); // rough hitbox
           if (Phaser.Geom.Intersects.LineToCircle(lineSeg, circle)) {
-            e.takeDamage(damage * 0.5, this.turret.knockback, isCrit); // Half damage to balance beam speed
+            e.takeDamage(damage * GAMEPLAY_MULTIPLIERS.beamDamageMultiplier, this.turret.knockback, isCrit);
           }
         }
       }
@@ -204,7 +206,7 @@ export class WeaponSystem {
             0, 0,
             prev.x, prev.y,
             currentTarget.x, currentTarget.y,
-            0x88ccff, 0.8
+            UI_THEME.chainLightning, 0.8
           );
           line.setOrigin(0, 0);
           this.scene.tweens.add({

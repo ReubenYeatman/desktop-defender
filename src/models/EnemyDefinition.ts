@@ -120,4 +120,14 @@ export const ENEMY_TYPES: EnemyDefinition[] = [
     xpMultiplier: 0.1,
     unlocksAtWave: 999, // Unlocks via Trojan death
   },
+  {
+    type: 'boss-minion',
+    textureKey: 'enemy-boss-minion',
+    healthMultiplier: 0.5,
+    speedMultiplier: 1.2,
+    damageMultiplier: 0.5,
+    goldMultiplier: 0.2,
+    xpMultiplier: 0.2,
+    unlocksAtWave: 999, // Only spawned by boss
+  },
 ];

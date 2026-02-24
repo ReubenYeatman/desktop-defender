@@ -2,6 +2,8 @@ import Phaser from 'phaser';
 import { formatNumber } from '../utils/FormatUtils';
 import { AscensionSystem, type RunStats } from '../systems/AscensionSystem';
 import type { PlayerProfile } from '../models/GameState';
+import { UI_THEME } from '../config/UITheme';
+import { TIMING } from '../config/TimingData';
 
 export class GameOverScene extends Phaser.Scene {
   private runStats!: RunStats;
@@ -22,11 +24,11 @@ export class GameOverScene extends Phaser.Scene {
     const h = this.scale.height;
 
     // Background
-    this.add.rectangle(0, 0, w, h, 0x0a0a1e).setOrigin(0, 0);
+    this.add.rectangle(0, 0, w, h, UI_THEME.gameOverBg).setOrigin(0, 0);
 
     // Red vignette overlay
     const vignette = this.add.graphics();
-    vignette.fillStyle(0xff0000, 0.08);
+    vignette.fillStyle(UI_THEME.gameOverAccent, 0.08);
     vignette.fillRect(0, 0, w, h);
 
     // Title with shake-in animation
@@ -51,7 +53,7 @@ export class GameOverScene extends Phaser.Scene {
 
     // Divider line
     const divider = this.add.graphics();
-    divider.lineStyle(1, 0x443333, 0.5);
+    divider.lineStyle(1, UI_THEME.gameOverPanel, 0.5);
     divider.lineBetween(w * 0.15, 75, w * 0.85, 75);
 
     // Run stats - animated entrance
@@ -95,8 +97,8 @@ export class GameOverScene extends Phaser.Scene {
     // Ascendium earned - prominent
     const ascendium = this.ascensionSystem.calculateAscendium(this.runStats, this.profile);
 
-    const ascBox = this.add.rectangle(w / 2, statsY + stats.length * 28 + 30, 200, 40, 0x221144);
-    ascBox.setStrokeStyle(1, 0x6633aa);
+    const ascBox = this.add.rectangle(w / 2, statsY + stats.length * 28 + 30, 200, 40, UI_THEME.ascensionPanel);
+    ascBox.setStrokeStyle(1, UI_THEME.ascensionAccent);
 
     const ascText = this.add.text(w / 2, statsY + stats.length * 28 + 30, `+${ascendium} ASCENDIUM`, {
       fontSize: '16px',
@@ -121,19 +123,19 @@ export class GameOverScene extends Phaser.Scene {
       duration: 800,
       yoyo: true,
       repeat: -1,
-      delay: 1400,
+      delay: TIMING.gameOverDelay,
       ease: 'Sine.easeInOut',
     });
 
     // Buttons
     const ascendBtnY = h - 100;
-    this.createButton(w / 2, ascendBtnY, 170, 38, 'ASCEND', 0x6633aa, 0x7744bb, '#ffffff', () => {
+    this.createButton(w / 2, ascendBtnY, 170, 38, 'ASCEND', UI_THEME.ascensionAccent, UI_THEME.ascensionAccentLight, '#ffffff', () => {
       this.applyRunRewards(ascendium);
       this.scene.start('AscensionScene', { profile: this.profile });
     });
 
     const newRunBtnY = h - 55;
-    this.createButton(w / 2, newRunBtnY, 170, 32, 'NEW RUN', 0x335577, 0x446688, '#aaaaaa', () => {
+    this.createButton(w / 2, newRunBtnY, 170, 32, 'NEW RUN', UI_THEME.buttonPrimary, UI_THEME.buttonPrimaryHover, '#aaaaaa', () => {
       this.applyRunRewards(ascendium);
       this.scene.start('GameScene', { profile: this.profile });
     });
@@ -152,7 +154,7 @@ export class GameOverScene extends Phaser.Scene {
     textColor: string, onClick: () => void
   ) {
     const btn = this.add.rectangle(x, y, w, h, bgColor);
-    btn.setStrokeStyle(1, 0x667788);
+    btn.setStrokeStyle(1, UI_THEME.textMuted);
     btn.setInteractive({ useHandCursor: true });
 
     this.add.text(x, y, label, {

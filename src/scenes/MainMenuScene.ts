@@ -1,6 +1,9 @@
 import Phaser from 'phaser';
 import { SaveManager } from '../managers/SaveManager';
 import type { GameState } from '../models/GameState';
+import { UI_THEME } from '../config/UITheme';
+import { TIMING } from '../config/TimingData';
+import { UI_LAYOUT } from '../config/BalanceData';
 
 export class MainMenuScene extends Phaser.Scene {
   private gameState!: GameState;
@@ -17,11 +20,11 @@ export class MainMenuScene extends Phaser.Scene {
 
     // Background gradient overlay
     const bg = this.add.graphics();
-    bg.fillStyle(0x0a0a1e, 1);
+    bg.fillStyle(UI_THEME.sceneBgDark, 1);
     bg.fillRect(0, 0, w, h);
 
     // Decorative grid lines
-    bg.lineStyle(1, 0x1a1a3e, 0.3);
+    bg.lineStyle(1, UI_THEME.sceneBgLight, 0.3);
     for (let x = 0; x < w; x += 40) {
       bg.lineBetween(x, 0, x, h);
     }
@@ -52,14 +55,14 @@ export class MainMenuScene extends Phaser.Scene {
     this.tweens.add({
       targets: title,
       alpha: 0.8,
-      duration: 1500,
+      duration: TIMING.titleFadeIn,
       yoyo: true,
       repeat: -1,
       ease: 'Sine.easeInOut',
     });
 
     // Subtitle
-    this.add.text(w / 2, h * 0.35, 'IDLE TOWER DEFENSE', {
+    this.add.text(w / 2, h * UI_LAYOUT.buttonYRatio, 'IDLE TOWER DEFENSE', {
       fontSize: '10px',
       fontFamily: 'monospace',
       color: '#446688',
@@ -67,16 +70,16 @@ export class MainMenuScene extends Phaser.Scene {
     }).setOrigin(0.5, 0.5);
 
     // Buttons
-    let btnY = h * 0.50;
+    let btnY = h * UI_LAYOUT.buttonYRatioAlt;
 
-    this.createButton(w / 2, btnY, 170, 38, 'NEW RUN', 0x335577, 0x446688, '#ffffff', () => {
+    this.createButton(w / 2, btnY, 170, 38, 'NEW RUN', UI_THEME.buttonPrimary, UI_THEME.buttonPrimaryHover, '#ffffff', () => {
       this.gameState.run = null;
       this.scene.start('GameScene', { profile: this.gameState.profile });
     });
 
     if (this.gameState.run) {
       btnY += 48;
-      this.createButton(w / 2, btnY, 170, 38, `CONTINUE (Wave ${this.gameState.run.currentWave})`, 0x447744, 0x558855, '#ffffff', () => {
+      this.createButton(w / 2, btnY, 170, 38, `CONTINUE (Wave ${this.gameState.run.currentWave})`, UI_THEME.buttonSuccess, UI_THEME.buttonSuccessHover, '#ffffff', () => {
         this.scene.start('GameScene', {
           profile: this.gameState.profile,
           savedRun: this.gameState.run,
@@ -86,7 +89,7 @@ export class MainMenuScene extends Phaser.Scene {
 
     if (this.gameState.profile.ascensionCount > 0) {
       btnY += 48;
-      this.createButton(w / 2, btnY, 170, 34, `ASCENSION (${this.gameState.profile.totalAscendium} A)`, 0x442266, 0x553377, '#cc88ff', () => {
+      this.createButton(w / 2, btnY, 170, 34, `ASCENSION (${this.gameState.profile.totalAscendium} A)`, UI_THEME.buttonAscend, UI_THEME.buttonAscendHover, '#cc88ff', () => {
         this.scene.start('AscensionScene', { profile: this.gameState.profile });
       });
     }
@@ -113,8 +116,8 @@ export class MainMenuScene extends Phaser.Scene {
     label: string, bgColor: number, hoverColor: number,
     textColor: string, onClick: () => void
   ) {
-    const border = this.add.rectangle(x, y, w + 2, h + 2, 0x667788);
-    border.setStrokeStyle(1, 0x667788);
+    const border = this.add.rectangle(x, y, w + 2, h + 2, UI_THEME.textMuted);
+    border.setStrokeStyle(1, UI_THEME.textMuted);
 
     const btn = this.add.rectangle(x, y, w, h, bgColor);
     btn.setInteractive({ useHandCursor: true });

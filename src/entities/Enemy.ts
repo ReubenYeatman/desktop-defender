@@ -1,5 +1,9 @@
 import Phaser from 'phaser';
 import { EventBus } from '../managers/EventBus';
+import { ENEMY_BEHAVIOR } from '../config/EnemyBehaviorData';
+import { GAMEPLAY_MULTIPLIERS } from '../config/BalanceData';
+import { TIMING } from '../config/TimingData';
+import { UI_THEME } from '../config/UITheme';
 
 export interface EnemySpawnConfig {
   x: number;
@@ -28,6 +32,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   private turretX: number = 0;
   private turretY: number = 0;
   private spawnTime: number = 0;
+  private originalSpeed: number = 0;
 
   public invulnerable: boolean = false;
   private visualLayers: Phaser.GameObjects.Sprite[] = [];
@@ -69,6 +74,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.health = config.health;
     this.maxHealth = config.health;
     this.speed = config.speed;
+    this.originalSpeed = config.speed;
     this.damage = config.damage;
     this.xpValue = config.xpValue;
     this.goldValue = config.goldValue;
@@ -80,10 +86,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.bossNumber = config.bossNumber || 1;
     this.bossHpThresholds = [0.75, 0.5, 0.25]; // Reset thresholds for new spawns
     this.isElite = config.isElite || false;
-    this.setScale(this.isElite ? 1.25 : 1);
+    this.setScale(this.isElite ? GAMEPLAY_MULTIPLIERS.eliteScale : 1);
     this.clearTint();
     if (this.isElite) {
-      this.setTint(0xffff44);
+      this.setTint(UI_THEME.eliteTint);
     }
 
     // Initialize visual layers based on enemy type
@@ -114,7 +120,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
       this.setTexture('enemy-boss'); // Base invisible physics geometry
       // Scale boss based on generation
-      const scaleMultiplier = 1 + (this.bossNumber - 1) * 0.15;
+      const scaleMultiplier = 1 + (this.bossNumber - 1) * GAMEPLAY_MULTIPLIERS.bossScalePerGeneration;
 
       const outer = this.scene.add.sprite(this.x, this.y, outerKey).setScale(scaleMultiplier);
       const mid = this.scene.add.sprite(this.x, this.y, midKey).setScale(scaleMultiplier);
@@ -125,16 +131,19 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     if (this.enemyType === 'glitch') {
       this.behaviorTimer = this.scene.time.addEvent({
-        delay: 1500,
+        delay: ENEMY_BEHAVIOR.glitch.teleportInterval,
         loop: true,
         callback: () => {
           if (this.active && !this.invulnerable) {
             const dist = Phaser.Math.Distance.Between(this.x, this.y, this.turretX, this.turretY);
-            if (dist > 60) {
+            if (dist > ENEMY_BEHAVIOR.glitch.minTeleportRange) {
               const ang = Phaser.Math.Angle.Between(this.x, this.y, this.turretX, this.turretY);
-              this.setPosition(this.x + Math.cos(ang) * 50, this.y + Math.sin(ang) * 50);
-              this.setTintFill(0x00ffcc);
-              this.scene.time.delayedCall(100, () => {
+              this.setPosition(
+                this.x + Math.cos(ang) * ENEMY_BEHAVIOR.glitch.teleportDistance,
+                this.y + Math.sin(ang) * ENEMY_BEHAVIOR.glitch.teleportDistance
+              );
+              this.setTintFill(UI_THEME.glitchTint);
+              this.scene.time.delayedCall(TIMING.glitchTintDuration, () => {
                 if (this.active) this.clearTint();
               });
             }
@@ -143,12 +152,12 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       });
     } else if (this.enemyType === 'seeker') {
       this.behaviorTimer = this.scene.time.addEvent({
-        delay: 3000,
+        delay: ENEMY_BEHAVIOR.seeker.beamInterval,
         loop: true,
         callback: () => {
           if (this.active && !this.invulnerable) {
             // Seeker beam attack
-            const line = this.scene.add.line(0, 0, this.x, this.y, this.turretX, this.turretY, 0xff0000, 0.8);
+            const line = this.scene.add.line(0, 0, this.x, this.y, this.turretX, this.turretY, UI_THEME.seekerBeam, 0.8);
             line.setOrigin(0, 0);
             line.setLineWidth(4);
             line.setBlendMode('ADD');
@@ -156,7 +165,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
               targets: line,
               alpha: 0,
               lineWidth: 0,
-              duration: 300,
+              duration: TIMING.seekerBeamFade,
               onComplete: () => line.destroy()
             });
             // Direct damage to turret
@@ -217,7 +226,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     if (this.enemyType === 'boss' && this.invulnerable) {
       // Orbital behavior: approach until a certain distance, then circle
       const distSq = Phaser.Math.Distance.Squared(this.x, this.y, this.turretX, this.turretY);
-      const targetDist = 200;
+      const targetDist = ENEMY_BEHAVIOR.boss.orbitDistance;
 
       if (distSq > targetDist * targetDist + 1000) {
         vx = Math.cos(angle) * this.speed;
@@ -240,13 +249,13 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       const perpAngle = angle + Math.PI / 2;
 
       if (this.enemyType === 'runner') {
-        const wave = Math.sin(timeAlive * 0.01) * (this.speed * 0.8);
+        const wave = Math.sin(timeAlive * 0.01) * (this.speed * GAMEPLAY_MULTIPLIERS.runnerWaveAmplitude);
         vx += Math.cos(perpAngle) * wave;
         vy += Math.sin(perpAngle) * wave;
         this.rotation += 0.2;
       } else if (this.enemyType === 'boss') {
         // Enraged boss moves erratically
-        const wave = Math.sin(timeAlive * 0.005) * (this.speed * 0.5);
+        const wave = Math.sin(timeAlive * 0.005) * (this.speed * GAMEPLAY_MULTIPLIERS.bossErraticAmplitude);
         vx += Math.cos(perpAngle) * wave;
         vy += Math.sin(perpAngle) * wave;
         this.rotation = angle + Math.PI / 2;
@@ -257,8 +266,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       } else if (this.enemyType === 'glitch' || this.enemyType === 'scout') {
         this.rotation = angle + Math.PI / 2;
       } else if (this.enemyType === 'seeker') {
-        // Seeker: Orbits at 180px distance
-        const targetDist = 180;
+        // Seeker: Orbits at configured distance
+        const targetDist = ENEMY_BEHAVIOR.seeker.orbitDistance;
         const distSq = Phaser.Math.Distance.Squared(this.x, this.y, this.turretX, this.turretY);
         // Reset default velocity so we don't double up
         vx = 0; vy = 0;
@@ -286,18 +295,18 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.health -= amount;
 
     // White flash on hit
-    this.setTintFill(0xffffff);
-    this.scene.time.delayedCall(33, () => {
+    this.setTintFill(UI_THEME.textPrimary);
+    this.scene.time.delayedCall(TIMING.damageFlashDuration, () => {
       if (this.active && !this.invulnerable) {
         this.clearTint();
-        if (this.isElite) this.setTint(0xffff44);
+        if (this.isElite) this.setTint(UI_THEME.eliteTint);
       }
     });
 
     // Spawn Impact Spark
     EventBus.emit('weapon-fired-vfx', { x: this.x, y: this.y, key: 'particle-spark' });
 
-    if (this.enemyType === 'tank' && this.health < this.maxHealth * 0.5) {
+    if (this.enemyType === 'tank' && this.health < this.maxHealth * GAMEPLAY_MULTIPLIERS.tankArmorCrackThreshold) {
       if (this.visualLayers.length > 0) {
         const armor = this.visualLayers[0];
         if (armor && armor.texture.key === 'enemy-tank-armor') {
@@ -334,7 +343,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     if (knockbackForce > 0) {
       let appliedForce = knockbackForce;
       if (this.enemyType === 'boss') {
-        appliedForce *= 0.3; // Reduce knockback on bosses by 70%
+        appliedForce *= ENEMY_BEHAVIOR.boss.knockbackReduction;
       }
 
       const vec = new Phaser.Math.Vector2(this.x - this.turretX, this.y - this.turretY).normalize();
@@ -344,7 +353,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       body.velocity.x += vec.x * appliedForce;
       body.velocity.y += vec.y * appliedForce;
 
-      this.scene.time.delayedCall(150, () => {
+      this.scene.time.delayedCall(TIMING.knockbackRecovery, () => {
         if (this.active) this.moveTowardTurret();
       });
     }
@@ -367,14 +376,14 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.scene.tweens.addCounter({
       from: 0,
       to: 1,
-      duration: 100, // fast flicker
+      duration: ENEMY_BEHAVIOR.boss.recoveryFlickerSpeed,
       yoyo: true,
-      repeat: 30, // 3 seconds total
+      repeat: ENEMY_BEHAVIOR.boss.recoveryFlickerCount,
       onUpdate: (tween) => {
         if (this.active) {
           const val = tween.getValue();
           if (val !== null) {
-            this.setTintFill(val > 0.5 ? 0xffffff : 0xaaaaaa);
+            this.setTintFill(val > 0.5 ? UI_THEME.recoveryFlickerLight : UI_THEME.recoveryFlickerDark);
           }
         }
       },
@@ -385,9 +394,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
             this.setTint(originalTint);
           }
           this.invulnerable = false;
-          // Speed resumes normal logic next frame
-          this.speed = this.maxHealth * 0.6; // We'll restore standard speed
-          if (this.maxHealth > 0) this.moveTowardTurret();
+          // Restore original speed
+          this.speed = this.originalSpeed;
+          if (this.active) this.moveTowardTurret();
         }
       }
     });

@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { SaveManager } from '../managers/SaveManager';
 import type { PlayerProfile } from '../models/GameState';
 import { EventBus } from '../managers/EventBus';
+import { UI_THEME } from '../config/UITheme';
 
 export class PauseScene extends Phaser.Scene {
     private profile!: PlayerProfile;
@@ -30,9 +31,9 @@ export class PauseScene extends Phaser.Scene {
         const cy = h / 2;
 
         const panel = this.add.graphics();
-        panel.fillStyle(0x1a1a2e, 0.95);
+        panel.fillStyle(UI_THEME.sceneBgMid, 0.95);
         panel.fillRoundedRect(cx - menuWidth / 2, cy - menuHeight / 2, menuWidth, menuHeight, 16);
-        panel.lineStyle(2, 0x4a9eff, 1);
+        panel.lineStyle(2, UI_THEME.accent, 1);
         panel.strokeRoundedRect(cx - menuWidth / 2, cy - menuHeight / 2, menuWidth, menuHeight, 16);
 
         const title = this.add.text(cx, cy - menuHeight / 2 + 30, 'SETTINGS', {
@@ -82,11 +83,11 @@ export class PauseScene extends Phaser.Scene {
         });
 
         // --- BUTTONS ---
-        const resumeBtn = this.createButton(cx, cy + 120, 'RESUME GAME', 0x4a9eff, () => {
+        const resumeBtn = this.createButton(cx, cy + 120, 'RESUME GAME', UI_THEME.accent, () => {
             this.resumeGame();
         });
 
-        const abandonBtn = this.createButton(cx, cy + 180, 'LEAVE ROUND', 0xff4444, () => {
+        const abandonBtn = this.createButton(cx, cy + 180, 'LEAVE ROUND', UI_THEME.buttonDanger, () => {
             this.promptAbandonRun();
         });
 
@@ -101,9 +102,9 @@ export class PauseScene extends Phaser.Scene {
 
     private createSlider(x: number, y: number, initialValue: number, onChange: (val: number) => void) {
         const width = 140;
-        const track = this.add.rectangle(x + width / 2, y, width, 6, 0x333333).setOrigin(0.5);
-        const fill = this.add.rectangle(x, y, width * initialValue, 6, 0x4a9eff).setOrigin(0, 0.5);
-        const knob = this.add.circle(x + width * initialValue, y, 10, 0xffffff).setInteractive({ cursor: 'pointer' });
+        const track = this.add.rectangle(x + width / 2, y, width, 6, UI_THEME.pauseSliderBg).setOrigin(0.5);
+        const fill = this.add.rectangle(x, y, width * initialValue, 6, UI_THEME.accent).setOrigin(0, 0.5);
+        const knob = this.add.circle(x + width * initialValue, y, 10, UI_THEME.pauseSliderKnob).setInteractive({ cursor: 'pointer' });
 
         this.input.setDraggable(knob);
 
@@ -121,7 +122,7 @@ export class PauseScene extends Phaser.Scene {
         const text = this.add.text(x - 20, y, label, { fontSize: '18px', fontFamily: 'monospace', color: '#fff' }).setOrigin(1, 0.5);
 
         const boxSize = 24;
-        const box = this.add.rectangle(x + 20, y, boxSize, boxSize, initialValue ? 0x4a9eff : 0x333333).setInteractive({ cursor: 'pointer' });
+        const box = this.add.rectangle(x + 20, y, boxSize, boxSize, initialValue ? UI_THEME.accent : UI_THEME.pauseToggleBg).setInteractive({ cursor: 'pointer' });
         box.setStrokeStyle(2, 0xffffff);
 
         const check = this.add.text(x + 20, y, initialValue ? '✓' : '', { fontSize: '20px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
@@ -129,7 +130,7 @@ export class PauseScene extends Phaser.Scene {
         let state = initialValue;
         box.on('pointerdown', () => {
             state = !state;
-            box.fillColor = state ? 0x4a9eff : 0x333333;
+            box.fillColor = state ? UI_THEME.accent : UI_THEME.pauseToggleBg;
             check.setText(state ? '✓' : '');
             onChange(state);
         });
@@ -179,17 +180,17 @@ export class PauseScene extends Phaser.Scene {
         const overlay = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 0.8).setOrigin(0);
         overlay.setInteractive(); // Block underlying UI
 
-        const promptBox = this.add.rectangle(cx, cy, 320, 160, 0x222222);
-        promptBox.setStrokeStyle(2, 0xff4444);
+        const promptBox = this.add.rectangle(cx, cy, 320, 160, UI_THEME.pauseSliderBg);
+        promptBox.setStrokeStyle(2, UI_THEME.buttonDanger);
 
         this.add.text(cx, cy - 40, 'Are you sure?', { fontSize: '24px', fontFamily: 'Impact, sans-serif', color: '#ff4444' }).setOrigin(0.5);
         this.add.text(cx, cy - 10, 'Progress will be lost.', { fontSize: '14px', fontFamily: 'monospace', color: '#aaaaaa' }).setOrigin(0.5);
 
-        this.createButton(cx - 80, cy + 40, 'CANCEL', 0x555555, () => {
+        this.createButton(cx - 80, cy + 40, 'CANCEL', UI_THEME.pauseSliderKnob, () => {
             this.scene.restart(); // Simple way to clear the prompt
         });
 
-        this.createButton(cx + 80, cy + 40, 'QUIT', 0xff4444, () => {
+        this.createButton(cx + 80, cy + 40, 'QUIT', UI_THEME.buttonDanger, () => {
             // Fade to black and abandon
             this.cameras.main.fadeOut(500, 0, 0, 0);
             this.cameras.main.once('camerafadeoutcomplete', () => {

@@ -80,3 +80,69 @@ export function getWaveConfig(waveNumber: number): WaveConfig {
     maxConcurrent,
   };
 }
+
+// Elite enemy configuration
+export const ELITE_CONFIG = {
+  unlockWave: 8,
+  spawnChance: 0.1,
+  healthMultiplier: 3,
+  xpMultiplier: 2,
+  goldMultiplier: 2,
+  excludedTypes: ['boss', 'boss-minion', 'swarm', 'scout'],
+};
+
+// Gameplay multipliers for balance tuning
+export const GAMEPLAY_MULTIPLIERS = {
+  // Wave mechanics
+  waveHealPercent: 0.15,
+
+  // Boss
+  bossSpeedMultiplier: 0.6,
+  bossVulnerableSpeed: 0.5,
+  bossDamageMultiplier: 2,
+  bossScalePerGeneration: 0.15,
+
+  // Enemy movement
+  runnerWaveAmplitude: 0.8,
+  bossErraticAmplitude: 0.5,
+  tankArmorCrackThreshold: 0.5,
+  eliteScale: 1.25,
+
+  // Weapon spread
+  multishotSpreadBase: 5,
+  multishotSpreadPerShot: 2.5,
+  cannonSpreadPerMultishot: 5,
+  beamDamageMultiplier: 0.5,
+
+  // Economy
+  bossKillCredits: 10,
+  normalKillCreditsMin: 1,
+  normalKillCreditsMax: 3,
+  goldPerKill: 5,
+};
+
+// Ascension/prestige multipliers
+export const ASCENSION_MULTIPLIERS = {
+  damagePerPoint: 0.5,
+  healthPerPoint: 0.10,
+  goldBonusPerPrestige: 3,
+};
+
+// Loot rarity multipliers
+export const LOOT_MULTIPLIERS = {
+  uncommonChance: 0.3,
+  rareStatBonus: 2,
+  epicChanceReduction: 0.2,
+  legendaryChanceReduction: 0.15,
+  legendaryStatBonus: 2,
+  maxStatMultiplier: 3,
+};
+
+// UI layout multipliers
+export const UI_LAYOUT = {
+  panelWidthRatio: 0.15,
+  panelHeightRatio: 0.85,
+  buttonYRatio: 0.35,
+  buttonYRatioAlt: 0.50,
+  scrollDeltaMultiplier: 0.5,
+};
