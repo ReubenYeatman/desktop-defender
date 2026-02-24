@@ -25,16 +25,17 @@ function createWindow() {
     center: true,
     // x: x + workAreaWidth - windowWidth - 20, // 20px padding from right edge
     // y: y + 20, // 20px padding from top edge
-    frame: false,
-    resizable: true,      // Allow resize for setSize() to work on macOS
-    alwaysOnTop: false,   // Default to false, load from saved settings
-    titleBarStyle: 'hidden',
+    resizable: true,
+    alwaysOnTop: false,
+    titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 10, y: 10 },
+    useContentSize: true,
     backgroundColor: '#1a1a2e',
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, '../electron/preload.cjs'),
       nodeIntegration: false,
       contextIsolation: true,
+      sandbox: false,
     },
   });
 
@@ -46,11 +47,15 @@ function createWindow() {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   }
 
-  mainWindow.once('ready-to-show', async () => {
-    await applySavedWindowSettings();
+  mainWindow.once('ready-to-show', () => {
     mainWindow?.show();
     mainWindow?.focus();
-    console.log("Window is ready to show and focused");
+  });
+
+  // Apply settings after window is fully shown (more reliable on macOS)
+  mainWindow.once('show', async () => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    await applySavedWindowSettings();
   });
 
   mainWindow.on('closed', () => {
@@ -67,35 +72,21 @@ async function applySavedWindowSettings() {
     const settings = gameState?.profile?.settings;
 
     if (settings && mainWindow) {
-      // Apply window size using setBounds for macOS compatibility
       const validSizes = [400, 500, 600, 700, 800];
       const size = validSizes.includes(settings.windowSize) ? settings.windowSize : 600;
-      const bounds = mainWindow.getBounds();
-      mainWindow.setBounds({
-        x: bounds.x,
-        y: bounds.y,
-        width: size,
-        height: size
-      });
+      mainWindow.setContentSize(size, size, false);
       mainWindow.center();
 
-      // Apply always on top with 'pop-up-menu' level for macOS
       if (settings.alwaysOnTop) {
-        mainWindow.setAlwaysOnTop(true, 'pop-up-menu');
-      } else {
-        mainWindow.setAlwaysOnTop(false);
+        mainWindow.setAlwaysOnTop(true, 'floating');
       }
 
-      // Apply opacity
       if (settings.windowOpacity !== undefined) {
         mainWindow.setOpacity(Math.max(0.5, Math.min(1, settings.windowOpacity)));
       }
-
-      console.log(`Applied saved settings: size=${size}, alwaysOnTop=${settings.alwaysOnTop}, opacity=${settings.windowOpacity}`);
     }
   } catch {
-    // No saved settings or error reading, use defaults
-    console.log('No saved settings found, using defaults');
+    // No saved settings, use defaults
   }
 }
 
@@ -133,21 +124,21 @@ ipcMain.on('toggle-always-on-top', () => {
 });
 
 ipcMain.handle('set-window-size', (_event, size: number) => {
-  // Accept numeric pixel values: 400, 500, 600, 700, 800
   const validSizes = [400, 500, 600, 700, 800];
   const dim = validSizes.includes(size) ? size : 600;
   if (mainWindow) {
-    // Use setBounds instead of setSize for better macOS compatibility
+    // Keep window centered on its current position
+    const [oldW, oldH] = mainWindow.getContentSize();
     const bounds = mainWindow.getBounds();
-    console.log(`[Window Resize] Before: ${bounds.width}x${bounds.height}`);
+    const deltaW = dim - oldW;
+    const deltaH = dim - oldH;
+    mainWindow.setContentSize(dim, dim, false);
     mainWindow.setBounds({
-      x: bounds.x,
-      y: bounds.y,
-      width: dim,
-      height: dim
+      x: Math.round(bounds.x - deltaW / 2),
+      y: Math.round(bounds.y - deltaH / 2),
+      width: bounds.width + deltaW,
+      height: bounds.height + deltaH,
     });
-    mainWindow.center();
-    console.log(`[Window Resize] After: ${dim}x${dim}`);
   }
 });
 
@@ -159,12 +150,10 @@ ipcMain.handle('set-window-opacity', (_event, opacity: number) => {
 
 ipcMain.handle('set-always-on-top', (_event, value: boolean) => {
   if (mainWindow) {
-    // Use 'pop-up-menu' level for macOS - stays above Dock and other windows
     if (value) {
-      mainWindow.setAlwaysOnTop(true, 'pop-up-menu');
+      mainWindow.setAlwaysOnTop(true, 'floating');
     } else {
       mainWindow.setAlwaysOnTop(false);
     }
-    console.log(`[Always on Top] Set to: ${value}, actual: ${mainWindow.isAlwaysOnTop()}`);
   }
 });

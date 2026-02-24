@@ -39,7 +39,9 @@
       "Bash(grep:*)",
       "Bash(pkill:*)",
       "Bash(git fetch:*)",
-      "Bash(git stash push:*)"
+      "Bash(git stash push:*)",
+      "Bash(git push:*)",
+      "Bash(sw_vers:*)"
     ]
   }
 }

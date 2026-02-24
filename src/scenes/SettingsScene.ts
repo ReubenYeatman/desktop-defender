@@ -263,7 +263,6 @@ export class SettingsScene extends Phaser.Scene {
 
     // Window Opacity
     this.createSliderRow(labelX, controlX, y, 'Opacity', this.profile.settings.windowOpacity, (val) => {
-      // Clamp to 0.5-1.0 range
       const opacity = 0.5 + val * 0.5;
       this.profile.settings.windowOpacity = opacity;
       this.saveSettings();
