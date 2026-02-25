@@ -70,6 +70,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.setVisible(true);
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.enable = true;
+    body.setSize(this.width, this.height);
 
     this.health = config.health;
     this.maxHealth = config.health;
@@ -292,14 +293,30 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   takeDamage(amount: number, knockbackForce: number = 0, isCrit: boolean = false) {
     if (this.invulnerable) return;
 
-    this.health -= amount;
+    // Apply multiplicative damage logic during vulnerable phase (Overload)
+    let finalAmount = amount;
+    if (this.enemyType === 'boss' && this.speed === 0 && !this.invulnerable) {
+      // It's in the overload state (stationary, not invulnerable)
+      finalAmount *= GAMEPLAY_MULTIPLIERS.bossVulnerableDamageMultiplier || 2.0;
+    }
 
-    // White flash on hit
-    this.setTintFill(UI_THEME.textPrimary);
-    this.scene.time.delayedCall(TIMING.damageFlashDuration, () => {
-      if (this.active && !this.invulnerable) {
-        this.clearTint();
-        if (this.isElite) this.setTint(UI_THEME.eliteTint);
+    this.health -= finalAmount;
+
+    // White flash on hit (Frame-independent via tween)
+    this.setTintFill(0xffffff);
+    this.isFlashed = true;
+
+    // Clear flash using tween
+    this.scene.tweens.add({
+      targets: this,
+      alpha: this.alpha, // dummy property to tie to time
+      duration: TIMING.damageFlashDuration,
+      onComplete: () => {
+        if (this.active && !this.invulnerable && this.isFlashed) {
+          this.clearTint();
+          if (this.isElite) this.setTint(UI_THEME.eliteTint);
+          this.isFlashed = false;
+        }
       }
     });
 
@@ -317,11 +334,19 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
+    // Rough estimate of enemy mass for screen shake
+    let massFactor = 1.0;
+    if (this.enemyType === 'grunt' || this.enemyType === 'swarm' || this.enemyType === 'runner') massFactor = 0.5;
+    if (this.enemyType === 'tank' || this.enemyType === 'firewall') massFactor = 2.0;
+    if (this.enemyType === 'boss') massFactor = 4.0;
+    if (this.isElite) massFactor *= 1.5;
+
     EventBus.emit('damage-dealt', {
       x: this.x,
       y: this.y,
       amount,
       isCrit,
+      massFactor
     });
 
     // Boss HP tracking and Thresholds
@@ -346,12 +371,24 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         appliedForce *= ENEMY_BEHAVIOR.boss.knockbackReduction;
       }
 
-      const vec = new Phaser.Math.Vector2(this.x - this.turretX, this.y - this.turretY).normalize();
+      // Calculate consistent impulse vector away from the turret core
+      const dx = this.x - this.turretX;
+      const dy = this.y - this.turretY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      let vecX = 0;
+      let vecY = 0;
+
+      if (dist > 0.001) {
+        vecX = dx / dist;
+        vecY = dy / dist;
+      }
+
       const body = this.body as Phaser.Physics.Arcade.Body;
 
       // Apply as physics impulse
-      body.velocity.x += vec.x * appliedForce;
-      body.velocity.y += vec.y * appliedForce;
+      body.velocity.x += vecX * appliedForce;
+      body.velocity.y += vecY * appliedForce;
 
       this.scene.time.delayedCall(TIMING.knockbackRecovery, () => {
         if (this.active) this.moveTowardTurret();
@@ -403,6 +440,40 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     // Notify WaveSystem that boss is recovering (so it stops shooting, etc if applicable)
     EventBus.emit('boss-recovery-state');
+  }
+
+  public triggerBossOverloadState() {
+    // Overload Visualization (flickering pure white)
+    const originalTint = this.tintTopLeft;
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    body.setVelocity(0, 0);
+
+    // Play intense white flicker tween for 3 seconds
+    this.scene.tweens.addCounter({
+      from: 0,
+      to: 1,
+      duration: 100, // Very fast flicker
+      yoyo: true,
+      repeat: 14, // Roughly 3 seconds (30 * 100ms)
+      onUpdate: (tween) => {
+        if (this.active && !this.isFlashed) { // don't override hit flash if possible
+          const val = tween.getValue();
+          if (val && val > 0.5) {
+            this.setTintFill(0xffffff); // Pure white
+          } else {
+            this.clearTint();
+          }
+        }
+      },
+      onComplete: () => {
+        if (this.active) {
+          this.clearTint();
+          if (originalTint !== 0xffffff) {
+            this.setTint(originalTint);
+          }
+        }
+      }
+    });
   }
 
   die() {

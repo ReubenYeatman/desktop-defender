@@ -57,7 +57,7 @@ export class GameOverScene extends Phaser.Scene {
     divider.lineBetween(w * 0.15, 75, w * 0.85, 75);
 
     // Run stats - animated entrance
-    const statsY = 95;
+    const statsY = 85;
     const stats = [
       { label: 'Waves Survived', value: `${this.runStats.highestWave}`, color: '#ffffff' },
       { label: 'Enemies Killed', value: `${this.runStats.enemiesKilled}`, color: '#ff8888' },
@@ -97,10 +97,10 @@ export class GameOverScene extends Phaser.Scene {
     // Ascendium earned - prominent
     const ascendium = this.ascensionSystem.calculateAscendium(this.runStats, this.profile);
 
-    const ascBox = this.add.rectangle(w / 2, statsY + stats.length * 28 + 30, 200, 40, UI_THEME.ascensionPanel);
+    const ascBox = this.add.rectangle(w / 2, statsY + stats.length * 28 + 15, 200, 30, UI_THEME.ascensionPanel);
     ascBox.setStrokeStyle(1, UI_THEME.ascensionAccent);
 
-    const ascText = this.add.text(w / 2, statsY + stats.length * 28 + 30, `+${ascendium} ASCENDIUM`, {
+    const ascText = this.add.text(w / 2, statsY + stats.length * 28 + 15, `+${ascendium} ASCENDIUM`, {
       fontSize: '16px',
       fontFamily: 'monospace',
       color: '#cc88ff',
@@ -128,14 +128,14 @@ export class GameOverScene extends Phaser.Scene {
     });
 
     // Buttons
-    const ascendBtnY = h - 100;
-    this.createButton(w / 2, ascendBtnY, 170, 38, 'ASCEND', UI_THEME.ascensionAccent, UI_THEME.ascensionAccentLight, '#ffffff', () => {
+    const ascendBtnY = h - 65;
+    this.createButton(w / 2, ascendBtnY, 170, 30, 'ASCEND', UI_THEME.ascensionAccent, UI_THEME.ascensionAccentLight, '#ffffff', () => {
       this.applyRunRewards(ascendium);
       this.scene.start('AscensionScene', { profile: this.profile });
     });
 
-    const newRunBtnY = h - 55;
-    this.createButton(w / 2, newRunBtnY, 170, 32, 'NEW RUN', UI_THEME.buttonPrimary, UI_THEME.buttonPrimaryHover, '#aaaaaa', () => {
+    const newRunBtnY = h - 25;
+    this.createButton(w / 2, newRunBtnY, 170, 30, 'NEW RUN', UI_THEME.buttonPrimary, UI_THEME.buttonPrimaryHover, '#aaaaaa', () => {
       this.applyRunRewards(ascendium);
       this.scene.start('GameScene', { profile: this.profile });
     });

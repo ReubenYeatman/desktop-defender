@@ -1,5 +1,5 @@
-export const GAME_WIDTH = 600;
-export const GAME_HEIGHT = 600;
+export const GAME_WIDTH = 300;
+export const GAME_HEIGHT = 300;
 
 // Turret base stats
 export const TURRET_BASE_HP = 100;

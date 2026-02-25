@@ -16,17 +16,16 @@ function createWindow() {
   console.log("Primary Display WorkArea:", primaryDisplay.workArea);
   const { x, y, width: workAreaWidth } = primaryDisplay.workArea;
 
-  const windowWidth = 600;
-  const windowHeight = 600;
+  const windowWidth = 300;
+  const windowHeight = 300;
 
   mainWindow = new BrowserWindow({
     width: windowWidth,
     height: windowHeight,
     center: true,
-    // x: x + workAreaWidth - windowWidth - 20, // 20px padding from right edge
-    // y: y + 20, // 20px padding from top edge
-    resizable: true,
-    alwaysOnTop: false,
+    frame: false,
+    resizable: false,     // Disable resizing
+    alwaysOnTop: true,
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 10, y: 10 },
     useContentSize: true,
@@ -72,14 +71,13 @@ async function applySavedWindowSettings() {
     const settings = gameState?.profile?.settings;
 
     if (settings && mainWindow) {
-      const validSizes = [400, 500, 600, 700, 800];
-      const size = validSizes.includes(settings.windowSize) ? settings.windowSize : 600;
+      // Force 300x300 regardless of settings
+      const size = 300;
       mainWindow.setContentSize(size, size, false);
       mainWindow.center();
 
-      if (settings.alwaysOnTop) {
-        mainWindow.setAlwaysOnTop(true, 'floating');
-      }
+      // Force always-on-top so the game overlays all tabs permanently
+      mainWindow.setAlwaysOnTop(true, 'floating');
 
       if (settings.windowOpacity !== undefined) {
         mainWindow.setOpacity(Math.max(0.5, Math.min(1, settings.windowOpacity)));
@@ -124,8 +122,8 @@ ipcMain.on('toggle-always-on-top', () => {
 });
 
 ipcMain.handle('set-window-size', (_event, size: number) => {
-  const validSizes = [400, 500, 600, 700, 800];
-  const dim = validSizes.includes(size) ? size : 600;
+  const validSizes = [300, 400, 500, 600, 700, 800];
+  const dim = validSizes.includes(size) ? size : 300;
   if (mainWindow) {
     // Keep window centered on its current position
     const [oldW, oldH] = mainWindow.getContentSize();

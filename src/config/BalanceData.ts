@@ -100,6 +100,7 @@ export const GAMEPLAY_MULTIPLIERS = {
   bossSpeedMultiplier: 0.6,
   bossVulnerableSpeed: 0.5,
   bossDamageMultiplier: 2,
+  bossVulnerableDamageMultiplier: 2.0,
   bossScalePerGeneration: 0.15,
 
   // Enemy movement

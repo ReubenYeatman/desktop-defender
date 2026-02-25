@@ -221,17 +221,20 @@ export class WaveSystem {
     if (!this.activeBoss) return;
     this.bossPhase = 'vulnerable';
 
-    // 1. Enter Overheated/Vulnerable stationary phase for 3 seconds
-    this.activeBoss.invulnerable = true;
+    // 1. Enter Overheated/Vulnerable stationary phase for exactly 3 seconds
+    this.activeBoss.invulnerable = false; // MUST be false to take multiplicative damage
     this.activeBoss.speed = 0; // Stationary
     this.activeBoss.clearTint();
-    this.activeBoss.setTintFill(UI_THEME.bossVulnerable); // Yellow System Overload flash
+    // (Flicker is handled by Enemy.ts triggerBossOverloadState now, but we just set the flags here)
+    if (typeof (this.activeBoss as any).triggerBossOverloadState === 'function') {
+      (this.activeBoss as any).triggerBossOverloadState();
+    }
 
     // Fire event to notify HUD of Overload
     EventBus.emit('boss-vulnerable-started');
 
-    // 2. Transition to slower pursuit
-    this.scene.time.delayedCall(TIMING.bossVulnerableDelay, () => {
+    // 2. Transition to slower pursuit after 3 seconds
+    this.scene.time.delayedCall(3000, () => {
       if (this.activeBoss?.active) {
         this.activeBoss.clearTint();
         this.activeBoss.setTint(UI_THEME.bossAngry); // Angry reddish tint

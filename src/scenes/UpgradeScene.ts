@@ -34,7 +34,9 @@ export class UpgradeScene extends Phaser.Scene {
   }
 
   create() {
-    if (UpgradeScene.instance) return;
+    if (UpgradeScene.instance) {
+      UpgradeScene.instance.scene.stop();
+    }
     UpgradeScene.instance = this;
 
     this.rows = [];
@@ -43,29 +45,36 @@ export class UpgradeScene extends Phaser.Scene {
     const h = this.scale.height;
 
     // Semi-transparent backdrop
-    const backdrop = this.add.rectangle(0, 0, w, h, 0x000000, 0.6);
+    const backdrop = this.add.rectangle(0, 0, w, h, 0x000000, 0.4);
     backdrop.setOrigin(0, 0);
     backdrop.setInteractive();
     backdrop.on('pointerdown', () => this.closeScene());
 
-    // Panel
-    const panelW = Math.min(w - 30, 330);
-    this.panelH = Math.min(h - 50, 410);
-    const panelX = (w - panelW) / 2;
-    const panelY = (h - this.panelH) / 2;
+    // Panel fixed size fitting into 300x300
+    const panelW = 280;
+    this.panelH = 260;
+    const initialPanelX = (w - panelW) / 2;
+    const initialPanelY = (h - this.panelH) / 2;
+
+    // Create a container for the entire panel so we can drag it
+    const panelContainer = this.add.container(initialPanelX, initialPanelY);
 
     // Panel shadow
-    this.add.rectangle(panelX + 3, panelY + 3, panelW, this.panelH, 0x000000, 0.4).setOrigin(0, 0);
+    const shadow = this.add.rectangle(3, 3, panelW, this.panelH, 0x000000, 0.4).setOrigin(0, 0);
+    panelContainer.add(shadow);
 
     // Panel style (cyan glowing frame)
-    this.panel = this.add.rectangle(panelX, panelY, panelW, this.panelH, UI_THEME.panelBg, 0.9);
+    this.panel = this.add.rectangle(0, 0, panelW, this.panelH, UI_THEME.panelBg, 0.9);
     this.panel.setOrigin(0, 0);
     this.panel.setStrokeStyle(3, UI_THEME.accent);
-    this.panel.setInteractive(); // Catch clicks so backdrop doesn't close
+    this.panel.setInteractive({ draggable: true }); // Make the panel background draggable
+    panelContainer.add(this.panel);
 
     // Title bar
-    this.add.rectangle(panelX, panelY, panelW, 40, UI_THEME.headerBg).setOrigin(0, 0);
-    this.add.text(panelX + panelW / 2, panelY + 20, 'DESKTOP DEFENDER:\nSYSTEM UPGRADES', {
+    const titleBar = this.add.rectangle(0, 0, panelW, 40, UI_THEME.headerBg).setOrigin(0, 0);
+    panelContainer.add(titleBar);
+
+    const titleText = this.add.text(panelW / 2, 20, 'DESKTOP DEFENDER:\nSYSTEM UPGRADES', {
       fontSize: '14px',
       fontFamily: 'Impact, sans-serif',
       color: '#cceeff',
@@ -73,75 +82,77 @@ export class UpgradeScene extends Phaser.Scene {
       stroke: '#000000',
       strokeThickness: 2,
     }).setOrigin(0.5, 0.5);
+    panelContainer.add(titleText);
 
     // Close button
-    const closeBtn = this.add.rectangle(panelX + panelW - 24, panelY + 8, 20, 20, UI_THEME.headerBg);
+    const closeBtn = this.add.rectangle(panelW - 24, 8, 20, 20, UI_THEME.headerBg);
     closeBtn.setOrigin(0, 0);
     closeBtn.setInteractive({ useHandCursor: true });
-    this.add.text(panelX + panelW - 14, panelY + 18, 'X', {
+
+    const closeText = this.add.text(panelW - 14, 18, 'X', {
       fontSize: '14px',
       fontFamily: 'monospace',
       color: '#ffaaaa',
       fontStyle: 'bold',
     }).setOrigin(0.5, 0.5);
+    panelContainer.add([closeBtn, closeText]);
 
     closeBtn.on('pointerover', () => closeBtn.setFillStyle(UI_THEME.accentDark));
     closeBtn.on('pointerout', () => closeBtn.setFillStyle(UI_THEME.headerBg));
     closeBtn.on('pointerdown', () => this.closeScene());
 
     // --- SCROLLING SETUP ---
-    // Instead of GeometryMask (which is buggy with scaling), we use a separate camera viewport
-    // Account for 40px title bar and 30px credits bar at bottom
-    this.uiCamera = this.cameras.add(panelX, panelY + 40, panelW, this.panelH - 70);
-    this.uiCamera.setScroll(0, 0);
+    // Instead of GeometryMask (which is buggy with dragging), we will put the rows in a container
+    // and crop the container, or use a mask specifically tied to the panel Container
+    this.scrollContainer = this.add.container(0, 40);
+    panelContainer.add(this.scrollContainer);
 
-    // Original camera ignores the scrollable content, uiCamera only renders the scrollable content
-    this.scrollContainer = this.add.container(0, 0);
-    this.scrollContainer.removeAll(true);
-    this.cameras.main.ignore(this.scrollContainer);
+    // Create a precise geometric mask for the scroll area
+    const maskShape = this.make.graphics({ x: 0, y: 0 }, false);
+    // Draw the mask rect relative to screen. We'll update it during drag.
+    maskShape.fillStyle(0xffffff);
+    maskShape.fillRect(initialPanelX, initialPanelY + 40, panelW, this.panelH - 70);
+    const scrollMask = maskShape.createGeometryMask();
+    this.scrollContainer.setMask(scrollMask);
 
     // Build upgrade rows inside the container
-    this.buildUpgradeRows(0, 0, panelW);
+    this.buildUpgradeRows(0, panelW);
 
     // Bottom Credits panel
     const bottomH = 30;
-    const creditsBg = this.add.rectangle(panelX, panelY + this.panelH - bottomH, panelW, bottomH, UI_THEME.headerBg).setOrigin(0, 0);
-    creditsBg.setDepth(10);
+    const creditsBg = this.add.rectangle(0, this.panelH - bottomH, panelW, bottomH, UI_THEME.headerBg).setOrigin(0, 0);
+    panelContainer.add(creditsBg);
 
     const gs = this.scene.get('GameScene') as any;
     const initialGold = gs?.economySystem ? gs.economySystem.getGold() : 0;
 
-    const creditsText = this.add.text(panelX + panelW / 2, panelY + this.panelH - bottomH / 2, `CREDITS: ${initialGold}`, {
+    const creditsTextStr = this.add.text(panelW / 2, this.panelH - bottomH / 2, `CREDITS: ${initialGold}`, {
       fontSize: '16px',
       fontFamily: 'Impact, sans-serif',
       color: '#66ccff'
     }).setOrigin(0.5, 0.5);
-    creditsText.setDepth(11);
+    panelContainer.add(creditsTextStr);
 
-    // Scrolling Input (attached to main panell)
+    // Scrolling Input
     this.input.on('wheel', (pointer: Phaser.Input.Pointer, gameObjects: any[], deltaX: number, deltaY: number) => {
       this.scrollY += deltaY * 0.5;
       this.scrollY = Phaser.Math.Clamp(this.scrollY, 0, this.maxScroll);
-      this.uiCamera.scrollY = this.scrollY;
+      this.scrollContainer.y = 40 - this.scrollY;
     });
 
-    let isDragging = false;
-    let startDragY = 0;
+    // Dragging Logic for the entire Panel
+    this.input.setDraggable(this.panel);
+    this.input.on('drag', (pointer: Phaser.Input.Pointer, gameObject: any, dragX: number, dragY: number) => {
+      if (gameObject === this.panel) {
+        panelContainer.x = dragX;
+        panelContainer.y = dragY;
 
-    this.panel.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      isDragging = true;
-      startDragY = pointer.y + this.scrollY;
-    });
-
-    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-      if (isDragging) {
-        this.scrollY = startDragY - pointer.y;
-        this.scrollY = Phaser.Math.Clamp(this.scrollY, 0, this.maxScroll);
-        this.uiCamera.scrollY = this.scrollY;
+        // Update mask position to follow the panel
+        maskShape.clear();
+        maskShape.fillStyle(0xffffff);
+        maskShape.fillRect(panelContainer.x, panelContainer.y + 40, panelW, this.panelH - 70);
       }
     });
-
-    this.input.on('pointerup', () => isDragging = false);
 
     // Bind event handlers
     this.onUpgradePurchased = () => {
@@ -149,7 +160,7 @@ export class UpgradeScene extends Phaser.Scene {
         this.refreshRows();
         const gs = this.scene.get('GameScene') as any;
         if (gs && gs.economySystem) {
-          creditsText.setText(`CREDITS: ${gs.economySystem.getGold()}`);
+          creditsTextStr.setText(`CREDITS: ${gs.economySystem.getGold()}`);
         }
       }
     };
@@ -158,7 +169,7 @@ export class UpgradeScene extends Phaser.Scene {
         this.refreshRows();
         const gs = this.scene.get('GameScene') as any;
         if (gs && gs.economySystem) {
-          creditsText.setText(`CREDITS: ${gs.economySystem.getGold()}`);
+          creditsTextStr.setText(`CREDITS: ${gs.economySystem.getGold()}`);
         }
       }
     };
@@ -177,30 +188,21 @@ export class UpgradeScene extends Phaser.Scene {
     this.scene.stop();
   }
 
-  private buildUpgradeRows(startX: number, startY: number, panelW: number) {
+  private buildUpgradeRows(startY: number, panelW: number) {
     const gameScene = this.scene.get('GameScene') as any;
     if (!gameScene || !gameScene.upgradeSystem) return;
 
     const upgrades = gameScene.upgradeSystem.getUpgradeList();
     const rowH = 75;
     const padding = 10;
+    const startX = 0; // Relative to scrollContainer
 
     // Add extra padding at bottom so scrolling shows bottom row clearly
-    const bottomScrollBuffer = 80;
+    const bottomScrollBuffer = 10;
 
     for (let i = 0; i < upgrades.length; i++) {
       const u = upgrades[i];
       const y = startY + padding + i * (rowH + padding);
-
-      // Map upgrade ID to icon key
-      let iconKey = 'icon_damage';
-      if (u.id === 'firerate') iconKey = 'icon_firerate';
-      if (u.id === 'range') iconKey = 'icon_scope';
-      if (u.id === 'knockback') iconKey = 'icon_knockback';
-      if (u.id === 'max_health') iconKey = 'icon_fortify';
-      if (u.id === 'gold_bonus') iconKey = 'icon_greed';
-      if (u.id === 'crit_chance') iconKey = 'icon_crit';
-      if (u.id === 'regen') iconKey = 'icon_regen';
 
       const rowContainer = this.add.container(0, 0);
 
@@ -217,11 +219,13 @@ export class UpgradeScene extends Phaser.Scene {
       iconBg.setStrokeStyle(2, UI_THEME.accent);
       rowContainer.add(iconBg);
 
-      // Icon
-      const icon = this.add.image(startX + 38, y + rowH / 2, iconKey);
-      icon.setDisplaySize(28, 28);
-      icon.setTint(UI_THEME.accent);
-      rowContainer.add(icon);
+      // Neon Vector Logos Drawn with Graphics instead of sprites
+      const iconGfx = this.add.graphics();
+      this.drawVectorIcon(iconGfx, u.id, startX + 38, y + rowH / 2);
+      rowContainer.add(iconGfx);
+
+      // Temporary stub for 'icon' in the returned UpgradeRow to match interface
+      const icon = this.add.image(0, 0, '__DEFAULT').setVisible(false);
 
       // Title & Level text
       const titleText = this.add.text(startX + 70, y + 8, u.name.toUpperCase(), {
@@ -318,11 +322,88 @@ export class UpgradeScene extends Phaser.Scene {
       this.rows.push({ id: u.id, bg, icon, titleText, descText, levelText, costText, hitZone, progressBarFill });
     }
 
-    // Calculate scroll bounds: we only scroll via the uiCamera now
+    // Calculate scroll bounds: we only scroll via the scrollContainer y offset now
     const totalHeight = upgrades.length * (rowH + padding) + padding + bottomScrollBuffer;
     // viewHeight = panelH - 70 (40px title bar + 30px credits bar)
     const viewHeight = this.panelH - 70;
     this.maxScroll = Math.max(0, totalHeight - viewHeight);
+  }
+
+  private drawVectorIcon(gfx: Phaser.GameObjects.Graphics, type: string, x: number, y: number) {
+    gfx.lineStyle(2, UI_THEME.accent, 1);
+
+    switch (type) {
+      case 'damage':
+        // Crosshair / bullet
+        gfx.strokeCircle(x, y, 10);
+        gfx.beginPath(); gfx.moveTo(x - 14, y); gfx.lineTo(x - 6, y); gfx.strokePath();
+        gfx.beginPath(); gfx.moveTo(x + 6, y); gfx.lineTo(x + 14, y); gfx.strokePath();
+        gfx.beginPath(); gfx.moveTo(x, y - 14); gfx.lineTo(x, y - 6); gfx.strokePath();
+        gfx.beginPath(); gfx.moveTo(x, y + 6); gfx.lineTo(x, y + 14); gfx.strokePath();
+        gfx.fillStyle(UI_THEME.accent, 1);
+        gfx.fillCircle(x, y, 3);
+        break;
+      case 'firerate':
+        // Lightning bolt / arrows
+        gfx.beginPath();
+        gfx.moveTo(x - 5, y - 10);
+        gfx.lineTo(x + 5, y - 2);
+        gfx.lineTo(x - 2, y + 2);
+        gfx.lineTo(x + 5, y + 10);
+        gfx.strokePath();
+        break;
+      case 'range':
+        // Concentric radar arcs
+        gfx.beginPath(); gfx.arc(x - 8, y + 8, 18, -Math.PI / 2, 0); gfx.strokePath();
+        gfx.beginPath(); gfx.arc(x - 8, y + 8, 10, -Math.PI / 2, 0); gfx.strokePath();
+        gfx.fillStyle(UI_THEME.accent, 1); gfx.fillCircle(x - 8, y + 8, 3);
+        break;
+      case 'knockback':
+        // Waves / Force push
+        gfx.beginPath(); gfx.moveTo(x - 10, y); gfx.lineTo(x - 2, y); gfx.strokePath();
+        gfx.beginPath(); gfx.moveTo(x, y - 8); gfx.lineTo(x + 8, y - 12); gfx.strokePath();
+        gfx.beginPath(); gfx.moveTo(x, y + 8); gfx.lineTo(x + 8, y + 12); gfx.strokePath();
+        gfx.beginPath(); gfx.moveTo(x + 4, y - 4); gfx.lineTo(x + 12, y - 6); gfx.strokePath();
+        gfx.beginPath(); gfx.moveTo(x + 4, y + 4); gfx.lineTo(x + 12, y + 6); gfx.strokePath();
+        break;
+      case 'max_health':
+        // Shield
+        gfx.beginPath();
+        gfx.moveTo(x - 10, y - 8);
+        gfx.lineTo(x + 10, y - 8);
+        gfx.lineTo(x + 10, y + 2);
+        gfx.lineTo(x, y + 12);
+        gfx.lineTo(x - 10, y + 2);
+        gfx.closePath();
+        gfx.strokePath();
+        break;
+      case 'regen':
+        // Plus sign with ascending particles
+        gfx.beginPath(); gfx.moveTo(x - 6, y); gfx.lineTo(x + 6, y); gfx.strokePath();
+        gfx.beginPath(); gfx.moveTo(x, y - 6); gfx.lineTo(x, y + 6); gfx.strokePath();
+        gfx.fillStyle(UI_THEME.accent, 1);
+        gfx.fillCircle(x + 8, y - 6, 2);
+        gfx.fillCircle(x - 6, y - 10, 1.5);
+        break;
+      case 'gold_bonus':
+        // Coin stack / Diamond
+        gfx.strokeRect(x - 6, y - 6, 12, 12);
+        gfx.beginPath(); gfx.moveTo(x - 4, y - 10); gfx.lineTo(x + 8, y - 10); gfx.lineTo(x + 10, y - 6); gfx.strokePath();
+        gfx.fillStyle(UI_THEME.accent, 1); gfx.fillCircle(x, y, 3);
+        break;
+      case 'crit_chance':
+        // Star / Spark
+        gfx.beginPath();
+        gfx.moveTo(x, y - 10); gfx.lineTo(x + 3, y - 3); gfx.lineTo(x + 10, y); gfx.lineTo(x + 3, y + 3);
+        gfx.lineTo(x, y + 10); gfx.lineTo(x - 3, y + 3); gfx.lineTo(x - 10, y); gfx.lineTo(x - 3, y - 3);
+        gfx.closePath();
+        gfx.strokePath();
+        break;
+      default:
+        // Default box
+        gfx.strokeRect(x - 8, y - 8, 16, 16);
+        break;
+    }
   }
 
   private refreshRows() {
@@ -331,7 +412,7 @@ export class UpgradeScene extends Phaser.Scene {
 
     const upgrades = gameScene.upgradeSystem.getUpgradeList();
 
-    const panelW = Math.min(this.scale.width - 30, 330);
+    const panelW = 280;
 
     for (const row of this.rows) {
       const u = upgrades.find((up: any) => up.id === row.id);

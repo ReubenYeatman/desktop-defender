@@ -138,12 +138,21 @@ export class GameScene extends Phaser.Scene {
       EventBus.emit('level-up-vfx', { x: this.turret.x, y: this.turret.y });
     });
 
+    // Screen shake on enemy hit depending on mass
+    EventBus.on('damage-dealt', (data: { amount: number; isCrit: boolean; massFactor?: number }) => {
+      const mass = data.massFactor || 1.0;
+      // Subtle jitter for normal, heavy jolt for bosses/tanks
+      const baseIntensity = 0.002;
+      const baseDuration = 40;
+      this.shakeCamera(baseIntensity * mass, baseDuration * mass);
+    });
+
     // Screen shake, Red Vignette, and Grid pulse on turret damage
     EventBus.on('turret-damaged', (data: { current: number; max: number }) => {
       if (data.current > 0 && data.current < data.max) {
         const ratio = data.current / data.max;
-        const intensity = ratio < 0.25 ? 0.008 : 0.004;
-        this.shakeCamera(intensity, 80);
+        const intensity = ratio < 0.25 ? 0.015 : 0.008; // Stronger shake on player hit
+        this.shakeCamera(intensity, 120);
 
         // Flash red vignette (if enabled)
         if (this.profile.settings.vignette) {

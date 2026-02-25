@@ -197,7 +197,7 @@ export class PauseScene extends Phaser.Scene {
             this.scene.stop('GameScene');
             this.scene.stop('HUDScene');
             this.scene.stop('UpgradeScene');
-            this.scene.start('MainMenuScene');
+            this.scene.start('BootScene');
           });
         });
       });

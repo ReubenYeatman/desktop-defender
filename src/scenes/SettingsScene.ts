@@ -7,7 +7,7 @@ type TabName = 'audio' | 'visual' | 'window';
 
 export class SettingsScene extends Phaser.Scene {
   private profile!: PlayerProfile;
-  private returnScene: string = 'MainMenuScene';
+  private returnScene: string = 'BootScene';
   private currentTab: TabName = 'audio';
 
   // UI elements that need repositioning on resize
@@ -27,7 +27,7 @@ export class SettingsScene extends Phaser.Scene {
 
   init(data: { profile: PlayerProfile; returnScene?: string }) {
     this.profile = data.profile;
-    this.returnScene = data.returnScene || 'MainMenuScene';
+    this.returnScene = data.returnScene || 'BootScene';
   }
 
   create() {
@@ -156,8 +156,8 @@ export class SettingsScene extends Phaser.Scene {
     const panelX = (w - panelW) / 2;
     const panelY = (h - panelH) / 2;
 
-    const contentStartY = panelY + 100;
-    const rowHeight = 45;
+    const contentStartY = panelY + 90;
+    const rowHeight = 35;
     const labelX = panelX + 30;
     const controlX = panelX + panelW - 30;
 

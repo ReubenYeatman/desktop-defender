@@ -50,8 +50,8 @@ export class SaveManager {
     if (settings.windowOpacity === undefined) settings.windowOpacity = 1.0;
     // Migrate old string-based windowSize to numeric
     if (settings.windowSize === undefined || typeof settings.windowSize === 'string') {
-      const sizeMap: Record<string, number> = { small: 400, medium: 600, large: 800 };
-      settings.windowSize = (sizeMap[settings.windowSize as string] || 600) as 400 | 500 | 600 | 700 | 800;
+      const sizeMap: Record<string, number> = { small: 300, medium: 400, large: 600 };
+      settings.windowSize = (sizeMap[settings.windowSize as string] || 300) as 300 | 400 | 500 | 600 | 700 | 800;
     }
 
     return state;

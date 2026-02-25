@@ -72,7 +72,7 @@ export class HUDScene extends Phaser.Scene {
     this.goldText.setOrigin(1, 0); // Right-aligned
 
     // HP Bar Setup (top-right, below gold or directly left)
-    const barWidth = 140;
+    const barWidth = 100;
     const barHeight = 12;
     // Positioned below the gold text, right aligned
     const barX = w - barWidth - 14;
@@ -313,34 +313,35 @@ export class HUDScene extends Phaser.Scene {
       this.waveText.setText(label);
       this.waveText.setColor(data.isBossWave ? '#ff4444' : '#ffffff');
 
-      // Center-Screen Splash Text
-      const centerX = this.scale.width / 2;
-      const centerY = this.scale.height / 2;
+      // Top-Right Slide and Bounce Notification
+      const w = this.scale.width;
 
-      const splashText = this.add.text(centerX, centerY - 50, data.isBossWave ? `BOSS WAVE ${data.wave}` : `WAVE ${data.wave}`, {
-        fontSize: '48px',
+      const splashText = this.add.text(w + 300, 80, data.isBossWave ? `BOSS WAVE ${data.wave}` : `WAVE ${data.wave}`, {
+        fontSize: '32px',
         fontFamily: 'Impact, sans-serif',
         color: data.isBossWave ? '#ff4444' : '#4a9eff',
         stroke: '#000000',
-        strokeThickness: 6,
-      }).setOrigin(0.5);
+        strokeThickness: 5,
+        backgroundColor: '#0a192fcc',
+        padding: { x: 10, y: 5 },
+      }).setOrigin(1, 0.5); // Right aligned
 
-      splashText.setScale(0); // scale 0%
-      splashText.setAlpha(0); // transparent
+      const targetX = w - 14; // Final position in top right
 
+      // Phase 1: Slide and Bounce In (0.4s)
       this.tweens.add({
         targets: splashText,
-        scale: 1.2, // scale 120%
-        alpha: 1, // fade in
-        duration: 500,
-        ease: 'Back.easeOut',
+        x: targetX,
+        duration: 400,
+        ease: 'Bounce.easeOut',
         onComplete: () => {
-          this.time.delayedCall(TIMING.titleFadeIn, () => {
+          // Phase 2: Hold (2.0s)
+          this.time.delayedCall(2000, () => {
+            // Phase 3: Retreat (0.4s)
             this.tweens.add({
               targets: splashText,
-              alpha: 0,
-              scale: 0.8,
-              duration: 300,
+              x: w + 300, // Slide back out
+              duration: 400,
               ease: 'Power2',
               onComplete: () => splashText.destroy()
             });
@@ -448,7 +449,7 @@ export class HUDScene extends Phaser.Scene {
     // Reposition Text/Bars
     this.goldText.setPosition(w - 14, 14);
 
-    const barWidth = 140;
+    const barWidth = 100;
     this.hpBarBg.setPosition(w - barWidth - 14, 40);
     this.hpBarFill.setPosition(w - barWidth - 14, 40);
     this.hpText.setPosition(w - barWidth - 14 + barWidth / 2, 40 + 6);

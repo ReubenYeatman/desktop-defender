@@ -51,9 +51,23 @@ export class WeaponSystem {
 
   private fire() {
     const target = this.turret.currentTarget!;
+
+    // Predictive Aiming: lead the target based on projectile speed
+    let aimX = target.x;
+    let aimY = target.y;
+    const projSpeed = this.activeWeapon.projectileSpeed;
+
+    if (projSpeed > 0 && target.body) {
+      const dist = Phaser.Math.Distance.Between(this.turret.x, this.turret.y, target.x, target.y);
+      const timeToHit = dist / projSpeed;
+      const tBody = target.body as Phaser.Physics.Arcade.Body;
+      aimX += tBody.velocity.x * timeToHit;
+      aimY += tBody.velocity.y * timeToHit;
+    }
+
     const angle = Phaser.Math.Angle.Between(
       this.turret.x, this.turret.y,
-      target.x, target.y
+      aimX, aimY
     );
 
     // Calculate barrel tip position for muzzle flash
@@ -66,8 +80,8 @@ export class WeaponSystem {
     switch (this.activeWeapon.pattern) {
       case 'single':
         if (multishot > 1) {
-          // Tight spread for multishot
-          const spreadArc = Math.min(10, GAMEPLAY_MULTIPLIERS.multishotSpreadBase + (multishot - 1) * GAMEPLAY_MULTIPLIERS.multishotSpreadPerShot);
+          // Tight exactly 10-degree spread for multishot
+          const spreadArc = 10;
           this.fireSpread(angle, multishot, spreadArc);
         } else {
           this.fireSingle(angle);

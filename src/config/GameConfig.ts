@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
 import { BootScene } from '../scenes/BootScene';
-import { MainMenuScene } from '../scenes/MainMenuScene';
 import { GameScene } from '../scenes/GameScene';
 import { HUDScene } from '../scenes/HUDScene';
 import { UpgradeScene } from '../scenes/UpgradeScene';
@@ -30,5 +29,5 @@ export const GAME_CONFIG: Phaser.Types.Core.GameConfig = {
       fps: 120, // Increased physics frequency for CCD simulation
     },
   },
-  scene: [BootScene, MainMenuScene, GameScene, HUDScene, UpgradeScene, GameOverScene, AscensionScene, PauseScene, SettingsScene],
+  scene: [BootScene, GameScene, HUDScene, UpgradeScene, GameOverScene, AscensionScene, PauseScene, SettingsScene],
 };

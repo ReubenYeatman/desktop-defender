@@ -51,7 +51,7 @@ export interface GameSettings {
   // Window (Electron)
   alwaysOnTop: boolean;
   windowOpacity: number;
-  windowSize: 400 | 500 | 600 | 700 | 800;
+  windowSize: 300 | 400 | 500 | 600 | 700 | 800;
 }
 
 export function createDefaultProfile(): PlayerProfile {
@@ -77,7 +77,7 @@ export function createDefaultProfile(): PlayerProfile {
       // Window
       alwaysOnTop: false,
       windowOpacity: 1.0,
-      windowSize: 600,
+      windowSize: 300,
     },
   };
 }
